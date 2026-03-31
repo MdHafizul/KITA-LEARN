@@ -1,0 +1,752 @@
+// Prisma Schema for Production-Ready LMS
+// 35+ Models | 11 Domains | PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// DOMAIN 1: IDENTITY (5 Models)
+// ============================================
+
+model User {
+  id                  String    @id @default(cuid())
+  fullName            String
+  email               String    @unique
+  phoneNumber         String?
+  password            String
+  dateOfBirth         DateTime?
+  address             String?
+  city                String?
+  state               String?
+  postalCode          String?
+  country             String?
+  profileImageUrl     String?
+  bio                 String?
+  isActive            Boolean   @default(true)
+  isEmailVerified     Boolean   @default(false)
+  emailVerifiedAt     DateTime?
+  lastLoginAt         DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  roles               UserRole[]
+  lecturer            LecturerProfile?
+  enrollments         Enrollment[]
+  announcements       AnnouncementRecipient[]
+  activityProgress    StudentActivityTracking[]
+  examAttempts        ExamAttempt[]
+  submissions         Submission[]
+  grades              Grade[]
+  certificates        Certificate[]
+  auditLogs           AuditLog[]
+
+  @@index([email])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model Role {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@index([name])
+  @@index([deletedAt])
+}
+
+model Permission {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  roles       RolePermission[]
+
+  @@index([name])
+  @@index([deletedAt])
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  // Relations
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+// ============================================
+// DOMAIN 2: LECTURER (1 Model)
+// ============================================
+
+model LecturerProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  qualifications      String?
+  specialization      String?
+  yearsOfExperience   Int?
+  departmentName      String?
+  officeLocation      String?
+  officePhone         String?
+  researchInterests   String?
+  publicationsCount   Int      @default(0)
+  studentRatings      Float?
+  totalStudents       Int      @default(0)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses Course[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+// ============================================
+// DOMAIN 3: COURSES (3 Models)
+// ============================================
+
+model Course {
+  id                      String    @id @default(cuid())
+  lecturerId              String
+  title                   String
+  description             String?
+  syllabus                String?
+  creditHours             Int?
+  duration                Int? // in weeks
+  startDate               DateTime?
+  endDate                 DateTime?
+  maxStudents             Int?
+  status                  String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  difficultyLevel         String?   // BEGINNER, INTERMEDIATE, ADVANCED
+  language                String    @default("en")
+  category                String?
+  tags                    String?   // JSON array
+  thumbnailUrl            String?
+  isActive                Boolean   @default(true)
+  enrollmentCount         Int       @default(0)
+  averageRating           Float?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  deletedAt               DateTime?
+
+  // Relations
+  lecturer                LecturerProfile @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
+  prerequisites           CoursePrerequisite[]
+  materials               CourseMaterial[]
+  activities              LearningActivity[]
+  classes                 Class[]
+  enrollments             Enrollment[]
+  announcements           Announcement[]
+
+  @@index([lecturerId])
+  @@index([status])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model CoursePrerequisite {
+  id                String   @id @default(cuid())
+  courseId          String
+  prerequisiteCourseId String
+  isRequired        Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  // Relations
+  course            Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, prerequisiteCourseId])
+  @@index([courseId])
+}
+
+model CourseMaterial {
+  id              String   @id @default(cuid())
+  courseId        String
+  title           String
+  description     String?
+  materialType    String   // PDF, VIDEO, LINK, DOCUMENT
+  url             String
+  fileSize        Int?
+  displayOrder    Int      @default(0)
+  isDownloadable  Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([displayOrder])
+  @@index([deletedAt])
+}
+
+// ============================================
+// DOMAIN 4: ANNOUNCEMENTS (2 Models)
+// ============================================
+
+model Announcement {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  content     String
+  priority    String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  attachmentUrl String?
+  publishedAt DateTime @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  recipients  AnnouncementRecipient[]
+
+  @@index([courseId])
+  @@index([publishedAt])
+  @@index([deletedAt])
+}
+
+model AnnouncementRecipient {
+  id               String   @id @default(cuid())
+  announcementId   String
+  userId           String
+  readAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([announcementId])
+  @@index([userId])
+  @@index([readAt])
+}
+
+// ============================================
+// DOMAIN 5: LEARNING ACTIVITIES (6 Models)
+// ============================================
+
+model LearningActivity {
+  id                  String    @id @default(cuid())
+  courseId            String
+  title               String
+  description         String?
+  activityType        String    // CONTENT, ASSIGNMENT, QUIZ, EXAM, DISCUSSION
+  contentFile         String?
+  instructions        String?
+  displayOrder        Int       @default(0)
+  durationMinutes     Int?
+  maxAttempts         Int?
+  passingScore        Int?
+  startDate           DateTime?
+  endDate             DateTime?
+  isPublished         Boolean   @default(true)
+  points              Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  course              Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisites       ActivityPrerequisite[]
+  submissions         Submission[]
+  contentActivity     ContentActivity?
+  assignment          Assignment?
+  exam                Exam?
+  activityProgress    StudentActivityTracking[]
+
+  @@index([courseId])
+  @@index([activityType])
+  @@index([isPublished])
+  @@index([displayOrder])
+  @@index([deletedAt])
+}
+
+model ActivityPrerequisite {
+  id              String   @id @default(cuid())
+  activityId      String
+  prerequisiteActivityId String
+  isRequired      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  // Relations
+  activity LearningActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, prerequisiteActivityId])
+  @@index([activityId])
+}
+
+model ContentActivity {
+  id          String   @id @default(cuid())
+  activityId  String   @unique
+  contentUrl  String
+  contentType String   // TEXT, VIDEO, IMAGE, PDF
+  duration    Int?     // in seconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  activity LearningActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+}
+
+model Assignment {
+  id                  String   @id @default(cuid())
+  activityId          String   @unique
+  instructions        String
+  rubricId            String?
+  totalPoints         Int      @default(100)
+  submissionDeadline  DateTime
+  lateSubmissionAllowed Boolean @default(false)
+  daysAfterDeadline   Int?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  activity  LearningActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  rubric    GradingScheme?   @relation(fields: [rubricId], references: [id])
+
+  @@index([activityId])
+  @@index([rubricId])
+}
+
+// ============================================
+// DOMAIN 6: ASSESSMENTS (6 Models)
+// ============================================
+
+model Exam {
+  id                  String    @id @default(cuid())
+  activityId          String    @unique
+  examType            String    @default("QUIZ") // QUIZ, MIDTERM, FINAL, PLACEMENT
+  totalQuestions      Int
+  timeLimit           Int       // in minutes
+  passingScore        Int       @default(50)
+  showResults         Boolean   @default(true)
+  shuffleQuestions    Boolean   @default(true)
+  randomizeOptions    Boolean   @default(false)
+  allowReview         Boolean   @default(true)
+  totalAttempts       Int       @default(1)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  activity   LearningActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  questions  ExamQuestion[]
+  attempts   ExamAttempt[]
+
+  @@index([activityId])
+  @@index([deletedAt])
+}
+
+model ExamQuestion {
+  id                  String    @id @default(cuid())
+  examId              String
+  questionText        String
+  questionType        String    // MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER, ESSAY
+  difficulty          String?   // EASY, MEDIUM, HARD
+  points              Int       @default(1)
+  correctAnswer       String?
+  explanation         String?
+  displayOrder        Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  exam      Exam       @relation(fields: [examId], references: [id], onDelete: Cascade)
+  options   String?    // JSON: [{ id, text, isCorrect }]
+  attempts  ExamAnswer[]
+
+  @@index([examId])
+  @@index([questionType])
+  @@index([displayOrder])
+}
+
+model ExamAttempt {
+  id            String   @id @default(cuid())
+  examId        String
+  userId        String
+  startedAt     DateTime @default(now())
+  submittedAt   DateTime?
+  totalTimeSpent Int?     // in seconds
+  score         Int?
+  percentage    Int?
+  isPassed      Boolean?
+  feedback      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  exam      Exam       @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers   ExamAnswer[]
+
+  @@unique([examId, userId])
+  @@index([examId])
+  @@index([userId])
+  @@index([isPassed])
+}
+
+model ExamAnswer {
+  id             String   @id @default(cuid())
+  attemptId      String
+  questionId     String
+  userAnswer     String?
+  isCorrect      Boolean?
+  pointsEarned   Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  attempt  ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+model AttemptOptionSnapshot {
+  id         String   @id @default(cuid())
+  attemptId  String
+  questionId String
+  options    String   // JSON: snapshot at time of attempt
+  createdAt  DateTime @default(now())
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}
+
+model GradingScheme {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  totalPoints     Int      @default(100)
+  passingScore    Int      @default(50)
+  gradeA          Int      @default(90)
+  gradeB          Int      @default(80)
+  gradeC          Int      @default(70)
+  gradeD          Int      @default(60)
+  gradeF          Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  assignments Assignment[]
+
+  @@index([deletedAt])
+}
+
+// ============================================
+// DOMAIN 7: GRADING (2 Models)
+// ============================================
+
+model Grade {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String? // For course grades
+  activityId      String? // For activity grades
+  scorePoints     Int
+  totalPoints     Int
+  percentage      Float
+  gradeValue      String   // A, B, C, D, F
+  feedback        String?
+  isPublished     Boolean  @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isPublished])
+  @@index([deletedAt])
+}
+
+model GradingRubric {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  criteria    String   // JSON
+  totalPoints Int      @default(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([deletedAt])
+}
+
+// ============================================
+// DOMAIN 8: ENROLLMENT & CLASSES (4 Models)
+// ============================================
+
+model Enrollment {
+  id              String   @id @default(cuid())
+  courseId        String
+  userId          String
+  enrollmentDate  DateTime @default(now())
+  progressPercent Int      @default(0)
+  status          String   @default("ACTIVE") // ACTIVE, SUSPENDED, COMPLETED, DROPPED
+  completionDate  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([userId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  courseId    String
+  name        String
+  description String?
+  schedule    String?  // JSON: { days: [], startTime, endTime }
+  location    String?
+  capacity    Int?
+  enrollmentCount Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrollments ClassEnrollment[]
+  sessions    ClassSession[]
+
+  @@index([courseId])
+  @@index([deletedAt])
+}
+
+model ClassEnrollment {
+  id         String   @id @default(cuid())
+  classId    String
+  userId     String
+  enrolledAt DateTime @default(now())
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([classId])
+  @@index([userId])
+}
+
+model ClassSession {
+  id          String   @id @default(cuid())
+  classId     String
+  sessionDate DateTime
+  startTime   DateTime
+  endTime     DateTime
+  topic       String?
+  notes       String?
+  recordingUrl String?
+  attendanceCount Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([sessionDate])
+}
+
+// ============================================
+// DOMAIN 9: SLT TRACKING (2 Models)
+// ============================================
+
+model StudentActivityTracking {
+  id                    String   @id @default(cuid())
+  userId                String
+  activityId            String
+  viewCount             Int      @default(0)
+  lastViewedAt          DateTime?
+  completionStatus      String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, COMPLETED
+  timeSpentMinutes      Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity LearningActivity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, activityId])
+  @@index([userId])
+  @@index([activityId])
+  @@index([completionStatus])
+}
+
+model StudentSltSummary {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  totalCoursesEnrolled Int      @default(0)
+  completedCourses     Int      @default(0)
+  certificatesEarned   Int      @default(0)
+  totalHoursLearned    Int      @default(0)
+  averageScore         Float?
+  lastActivityDate     DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// DOMAIN 10: PROGRESSION & CERTIFICATES (2 Models)
+// ============================================
+
+model StudentProgression {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  currentLevel    String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+  totalPoints     Int      @default(0)
+  nextMilestonePoints Int?
+  lastProgressionDate DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Certificate {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String?
+  certificateNumber String @unique
+  issuedDate      DateTime @default(now())
+  expiryDate      DateTime?
+  verificationCode String  @unique
+  issuerName      String?
+  signatureUrl    String?
+  isVerified      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([certificateNumber])
+  @@index([verificationCode])
+  @@index([isVerified])
+  @@index([deletedAt])
+}
+
+// ============================================
+// DOMAIN 11: AUDIT (1 Model)
+// ============================================
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  userId          String
+  action          String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE
+  entity          String   // User, Course, Exam, etc.
+  entityId        String?
+  changes         String?  // JSON: { before, after }
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+  deletedAt       DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+// ============================================
+// DOMAIN 12: SUBMISSIONS (1 Model - Generic)
+// ============================================
+
+model Submission {
+  id              String   @id @default(cuid())
+  activityId      String
+  userId          String
+  submissionContent String? // Text, JSON, or file URL
+  submissionDate  DateTime? @default(now())
+  submittedAt     DateTime?
+  status          String   @default("DRAFT") // DRAFT, SUBMITTED, GRADED, RETURNED
+  score           Int?
+  feedback        String?
+  gradeTime       DateTime?
+  isLate          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  activity LearningActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, userId])
+  @@index([activityId])
+  @@index([userId])
+  @@index([status])
+  @@index([isLate])
+  @@index([deletedAt])
+}
