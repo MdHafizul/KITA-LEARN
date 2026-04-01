@@ -197,22 +197,47 @@ const CertificateResponseDTO = z.object({
 // ============================================
 
 const LoginDTO = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
 });
 
 const RegisterDTO = z.object({
-  name: z.string().min(2).max(100),
-  email: z.string().email(),
-  username: z.string().min(3).max(50),
-  password: z.string().min(8),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  full_name: z.string().min(2, 'Full name is required'),
+  phone_number: z.string().optional(),
+  role: z.enum(['student', 'lecturer']).default('student')
+});
+
+const RefreshTokenDTO = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required')
+});
+
+const UpdateProfileDTO = z.object({
+  full_name: z.string().min(2, 'Full name is required').optional(),
+  phone_number: z.string().optional(),
+  email: z.string().email('Invalid email address').optional()
+});
+
+const ChangePasswordDTO = z.object({
+  currentPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Confirmation password must be at least 6 characters')
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword']
 });
 
 const TokenResponseDTO = z.object({
-  accessToken: z.string(),
-  refreshToken: z.string(),
-  expiresIn: z.number(),
-  user: UserResponseDTO,
+  access_token: z.string(),
+  refresh_token: z.string(),
+  expires_in: z.number(),
+  user: z.object({
+    id: z.string(),
+    email: z.string(),
+    full_name: z.string(),
+    role: z.string()
+  })
 });
 
 // ============================================
@@ -261,6 +286,9 @@ module.exports = {
   // Auth
   LoginDTO,
   RegisterDTO,
+  RefreshTokenDTO,
+  UpdateProfileDTO,
+  ChangePasswordDTO,
   TokenResponseDTO,
 
   // Common

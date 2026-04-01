@@ -19,12 +19,16 @@ const {
 } = require('./routes');
 const logger = require('./utils/logger');
 const { db } = require('./config/database');
+const jobs = require('./jobs');
 
 const app = express();
 
 // ============================================
-// GLOBAL MIDDLEWARE
+// INITIALIZE JOB PROCESSORS
 // ============================================
+
+jobs.registerJobProcessors();
+logger.info('✅ Background job processors registered');
 
 // CORS Configuration
 app.use(corsMiddleware);
@@ -42,6 +46,14 @@ app.use(morgan('combined', {
 // HEALTH CHECK ENDPOINTS
 // ============================================
 
+const {
+  logger,
+  getSystemHealth,
+  getAppInfo,
+  getDiagnostics,
+  metricsCollector
+} = require('./utils');
+
 /**
  * GET /health
  * Basic health check endpoint
@@ -50,8 +62,44 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    uptime: process.uptime()
   });
+});
+
+/**
+ * GET /health/app
+ * Application info and version
+ */
+app.get('/health/app', (req, res) => {
+  const appInfo = getAppInfo();
+  res.json({
+    success: true,
+    ...appInfo
+  });
+});
+
+/**
+ * GET /api/v1/health
+ * Comprehensive system health check with all services
+ */
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    const health = await getSystemHealth(jobs.getQueues());
+    const statusCode = health.status === 'healthy' ? 200 : health.status === 'warning' ? 200 : 503;
+    res.status(statusCode).json({
+      success: true,
+      ...health
+    });
+  } catch (error) {
+    logger.error('Comprehensive health check failed', { error: error.message });
+    res.status(503).json({
+      success: false,
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 /**
@@ -63,14 +111,115 @@ app.get('/api/v1/health/db', async (req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({
       success: true,
-      status: 'Database connected',
+      status: 'healthy',
+      service: 'postgresql',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Database health check failed', error);
+    logger.error('Database health check failed', { error: error.message });
     res.status(503).json({
       success: false,
-      status: 'Database connection failed',
+      status: 'unhealthy',
+      service: 'postgresql',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * GET /api/v1/health/redis
+ * Redis cache connectivity check
+ */
+app.get('/api/v1/health/redis', async (req, res) => {
+  try {
+    const { redis } = require('./config');
+    await redis.ping();
+    res.json({
+      success: true,
+      status: 'healthy',
+      service: 'redis',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Redis health check failed', { error: error.message });
+    res.status(503).json({
+      success: false,
+      status: 'unhealthy',
+      service: 'redis',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * GET /api/v1/health/queues
+ * Job queue status check
+ */
+app.get('/api/v1/health/queues', async (req, res) => {
+  try {
+    const queues = jobs.getQueues();
+    const queueStatus = {};
+    
+    for (const [name, queue] of Object.entries(queues)) {
+      if (queue) {
+        const counts = await queue.getJobCounts();
+        queueStatus[name] = counts;
+      }
+    }
+    
+    res.json({
+      success: true,
+      status: 'healthy',
+      service: 'job-queues',
+      queues: queueStatus,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Queue health check failed', { error: error.message });
+    res.status(503).json({
+      success: false,
+      status: 'unhealthy',
+      service: 'job-queues',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * GET /api/v1/metrics
+ * Application metrics and performance data
+ */
+app.get('/api/v1/metrics', (req, res) => {
+  const report = metricsCollector.getReport();
+  const alerts = metricsCollector.getAlerts();
+  
+  res.json({
+    success: true,
+    metrics: report,
+    alerts,
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * GET /api/v1/diagnostics
+ * Full system diagnostics (admin only)
+ */
+app.get('/api/v1/diagnostics', async (req, res) => {
+  try {
+    // Optional: Add admin check here
+    const diagnostics = await getDiagnostics(jobs.getQueues(), metricsCollector);
+    res.json({
+      success: true,
+      ...diagnostics
+    });
+  } catch (error) {
+    logger.error('Diagnostics retrieval failed', { error: error.message });
+    res.status(500).json({
+      success: false,
       error: error.message,
       timestamp: new Date().toISOString()
     });
@@ -123,6 +272,9 @@ app.use(errorHandler);
 // ============================================
 // EXPORT APP & DEBUG INFO
 // ============================================
+
+// Export jobs for graceful shutdown
+app.jobs = jobs;
 
 // Log all registered routes (development)
 if (process.env.NODE_ENV === 'development') {

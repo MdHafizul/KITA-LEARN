@@ -1,32 +1,20 @@
 /**
- * CORS Configuration Middleware
- * Handles Cross-Origin requests securely
+ * CORS Middleware
+ * Handles Cross-Origin Resource Sharing
  */
 
-const corsMiddleware = (req, res, next) => {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    process.env.FRONTEND_URL
-  ];
+const cors = require('cors');
+const env = require('../config/env');
 
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin) || !origin) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Max-Age', '86400');
-  }
-
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-
-  next();
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? env.CORS_ORIGIN.split(',')
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 3600
 };
 
-module.exports = corsMiddleware;
+module.exports = cors(corsOptions);

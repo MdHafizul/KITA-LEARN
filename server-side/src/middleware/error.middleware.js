@@ -1,111 +1,96 @@
-const logger = require('../utils/logger');
+/**
+ * Error Handling Middleware
+ * Centralized error handling for all exceptions
+ */
+
+const { BaseException } = require('../exceptions');
+const { statusCodes } = require('../config/constants');
+const { logger } = require('../utils');
 
 /**
- * Global Error Handler Middleware
- * Catches all errors and returns consistent response format
+ * Global error handler middleware
  */
-const errorHandler = (error, req, res, next) => {
-  // Log the error
-  logger.error('Request error:', {
-    message: error.message,
-    stack: error.stack,
-    path: req.path,
+const errorMiddleware = (err, req, res, next) => {
+  // Log error
+  logger.error(`Error: ${err.message}`, {
+    stack: err.stack,
+    url: req.url,
     method: req.method,
-    statusCode: error.statusCode || 500
+    user: req.user?.id
   });
 
-  // Handle known error types
-  if (error.name === 'UnauthorizedException') {
-    return res.status(401).json({
+  // Handle custom exceptions
+  if (err instanceof BaseException) {
+    return res.status(err.statusCode).json({
       success: false,
-      error: error.message,
-      code: 'UNAUTHORIZED',
-      status: 401
+      error: err.message,
+      code: err.code
     });
   }
 
-  if (error.name === 'ForbiddenException') {
-    return res.status(403).json({
-      success: false,
-      error: error.message,
-      code: 'FORBIDDEN',
-      status: 403
-    });
-  }
+  // Handle validation errors
+  if (err.name === 'ZodError') {
+    const messages = err.errors.map(error => ({
+      field: error.path.join('.'),
+      message: error.message
+    }));
 
-  if (error.name === 'ConflictException') {
-    return res.status(409).json({
+    return res.status(statusCodes.BAD_REQUEST).json({
       success: false,
-      error: error.message,
-      code: 'CONFLICT',
-      status: 409
-    });
-  }
-
-  if (error.name === 'ValidationException') {
-    return res.status(400).json({
-      success: false,
-      error: error.message,
+      error: 'Validation error',
       code: 'VALIDATION_ERROR',
-      details: error.details,
-      status: 400
+      details: messages
     });
   }
 
-  if (error.name === 'NotFoundException') {
-    return res.status(404).json({
+  // Handle JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(statusCodes.UNAUTHORIZED).json({
       success: false,
-      error: error.message,
-      code: 'NOT_FOUND',
-      status: 404
+      error: 'Invalid token',
+      code: 'INVALID_TOKEN'
     });
   }
 
   // Handle Prisma errors
-  if (error.code === 'P2002') {
-    return res.status(409).json({
+  if (err.code === 'P2002') {
+    return res.status(statusCodes.CONFLICT).json({
       success: false,
       error: 'Unique constraint violation',
-      code: 'CONFLICT',
-      status: 409
+      code: 'CONFLICT'
     });
   }
 
-  if (error.code === 'P2025') {
-    return res.status(404).json({
+  if (err.code === 'P2025') {
+    return res.status(statusCodes.NOT_FOUND).json({
       success: false,
       error: 'Record not found',
-      code: 'NOT_FOUND',
-      status: 404
+      code: 'NOT_FOUND'
     });
   }
 
-  // Default error response
-  res.status(error.statusCode || 500).json({
+  // Handle general errors
+  res.status(statusCodes.INTERNAL_ERROR).json({
     success: false,
-    error: error.message || 'Internal server error',
-    code: error.code || 'SERVER_ERROR',
-    status: error.statusCode || 500,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message,
+    code: 'INTERNAL_ERROR'
   });
 };
 
 /**
- * 404 Not Found Handler
- * Handles requests to non-existent routes
+ * 404 Not Found middleware
  */
-const notFoundHandler = (req, res) => {
-  res.status(404).json({
+const notFoundMiddleware = (req, res) => {
+  res.status(statusCodes.NOT_FOUND).json({
     success: false,
-    error: 'Route not found',
-    code: 'NOT_FOUND',
-    path: req.path,
-    method: req.method,
-    status: 404
+    error: `Route not found: ${req.method} ${req.url}`,
+    code: 'NOT_FOUND'
   });
 };
 
 module.exports = {
-  errorHandler,
-  notFoundHandler
+  errorMiddleware,
+  notFoundMiddleware
 };

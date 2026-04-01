@@ -22,6 +22,7 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`\n📚 API Documentation:`);
   console.log(`   Health Check: GET http://${HOST}:${PORT}/health`);
   console.log(`   DB Status:    GET http://${HOST}:${PORT}/api/v1/health/db`);
+  console.log(`   Queue Status: GET http://${HOST}:${PORT}/api/v1/health/queues`);
   console.log(`   API Docs:     GET http://${HOST}:${PORT}/api/v1/docs (coming soon)`);
   console.log(`\n`);
 });
@@ -29,8 +30,13 @@ const server = app.listen(PORT, HOST, () => {
 /**
  * Graceful Shutdown
  */
-const shutdown = () => {
+const shutdown = async () => {
   logger.info('🛑 Shutting down gracefully...');
+  
+  // Shutdown job queues first
+  if (app.jobs) {
+    await app.jobs.shutdownQueues();
+  }
   
   server.close(() => {
     logger.info('✅ Server closed');

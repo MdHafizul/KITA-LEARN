@@ -1,53 +1,43 @@
+/**
+ * Request Validation Middleware
+ * Validates request data using Zod schemas
+ */
+
 const { ZodError } = require('zod');
-const { ValidationException } = require('../exceptions');
+const { statusCodes } = require('../config/constants');
 
 /**
- * Zod Validation Middleware Factory
- * Validates req.body, req.params, or req.query against a schema
+ * Validate request body with Zod schema
  */
-const validateBody = (schema) => {
-  return async (req, res, next) => {
+const validateRequest = (schema) => {
+  return (req, res, next) => {
     try {
-      const validated = await schema.parseAsync(req.body);
-      req.validated = validated;
+      const validated = schema.parse(req.body);
+      req.body = validated;
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({
+        const messages = error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message
+        }));
+
+        return res.status(statusCodes.BAD_REQUEST).json({
           success: false,
-          error: 'Validation failed',
+          error: 'Validation error',
           code: 'VALIDATION_ERROR',
-          details: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
-          })),
-          status: 400
+          details: messages
         });
       }
 
-      res.status(500).json({
-        success: false,
-        error: 'Internal validation error',
-        code: 'SERVER_ERROR',
-        status: 500
-      });
+      next(error);
     }
   };
 };
 
-/**
- * Validate query parameters
- */
-const validateQuery = (schema) => {
-  return async (req, res, next) => {
-    try {
-      const validated = await schema.parseAsync(req.query);
-      req.validated = validated;
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({
-          success: false,
+module.exports = {
+  validateRequest
+};
           error: 'Query validation failed',
           code: 'VALIDATION_ERROR',
           details: error.errors.map(e => ({
