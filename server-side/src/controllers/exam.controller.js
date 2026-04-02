@@ -248,28 +248,6 @@ class ExamController {
   }
 
   /**
-   * Publish exam (Lecturer only)
-   * POST /api/v1/exams/:id/publish
-   */
-  async publishExam(req, res, next) {
-    try {
-      const { id: examId } = req.params;
-      const userId = req.user.id;
-
-      // Call service
-      const result = await ExamService.publishExam(examId, userId);
-
-      res.status(statusCodes.OK).json({
-        success: true,
-        data: { exam: result },
-        message: 'Exam published successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
    * Delete exam (Lecturer only - soft delete)
    * DELETE /api/v1/exams/:id
    */

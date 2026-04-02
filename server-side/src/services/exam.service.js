@@ -9,7 +9,7 @@ class ExamService {
    * Create a new exam
    */
   async createExam(data, lecturerId) {
-    const { activityId, title, description, totalQuestions, passingScore, timeLimit, startDate, endDate, shuffleQuestions } = data;
+    const { activityId, totalQuestions, passingScore, timeLimit, shuffleQuestions } = data;
 
     const activity = await prisma.learningActivity.findUnique({
       where: { id: activityId },
@@ -27,15 +27,10 @@ class ExamService {
     const exam = await prisma.exam.create({
       data: {
         activityId,
-        title,
-        description,
         totalQuestions: parseInt(totalQuestions),
-        passingScore: parseInt(passingScore),
+        passingScore: parseInt(passingScore) || 50,
         timeLimit: parseInt(timeLimit),
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        shuffleQuestions: shuffleQuestions === 'true' || shuffleQuestions === true,
-        status: 'DRAFT'
+        shuffleQuestions: shuffleQuestions === 'true' || shuffleQuestions === true
       }
     });
 
@@ -295,7 +290,7 @@ class ExamService {
       include: {
         activity: true,
         questions: {
-          include: { options: true }
+          orderBy: { displayOrder: 'asc' }
         }
       }
     });
@@ -415,8 +410,8 @@ class ExamService {
     }
 
     await prisma.exam.update({
-      where: { id: parseInt(examId) },
-      data: { deleted_at: new Date() }
+      where: { id: examId },
+      data: { deletedAt: new Date() }
     });
 
     return { message: 'Exam deleted successfully' };

@@ -7,8 +7,8 @@ const { z } = require('zod');
 
 const examRoutes = express.Router();
 
-const ExamIdDTO = z.object({ id: z.string().uuid() });
-const AttemptIdDTO = z.object({ attemptId: z.string().uuid() });
+const ExamIdDTO = z.object({ id: z.union([z.string().cuid(), z.string().uuid()]) });
+const AttemptIdDTO = z.object({ attemptId: z.union([z.string().cuid(), z.string().uuid()]) });
 
 /**
  * POST /api/v1/exams
@@ -88,18 +88,6 @@ examRoutes.get(
 examRoutes.get(
   '/',
   examController.getAllExams
-);
-
-/**
- * POST /api/v1/exams/:id/publish
- * Publish exam from DRAFT to PUBLISHED (Lecturer only)
- */
-examRoutes.post(
-  '/:id/publish',
-  authMiddleware,
-  requireRole(['LECTURER', 'ADMIN']),
-  validateParams(ExamIdDTO),
-  examController.publishExam
 );
 
 /**

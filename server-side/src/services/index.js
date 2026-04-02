@@ -5,6 +5,7 @@
 
 const authService = require('./auth.service');
 const courseService = require('./course.service');
+const activityService = require('./activity.service');
 const examService = require('./exam.service');
 const submissionService = require('./submission.service');
 const gradingService = require('./grading.service');
@@ -16,6 +17,7 @@ module.exports = {
   // PascalCase exports (for controller destructuring)
   AuthService: authService,
   CourseService: courseService,
+  ActivityService: activityService,
   ExamService: examService,
   SubmissionService: submissionService,
   GradingService: gradingService,
@@ -26,6 +28,7 @@ module.exports = {
   // camelCase exports (for direct imports like require('./services/auth.service'))
   authService,
   courseService,
+  activityService,
   examService,
   submissionService,
   gradingService,

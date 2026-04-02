@@ -157,11 +157,19 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  var jsonData = pm.response.json();",
-                  "  pm.collectionVariables.set('auth_token', jsonData.data.token);",
-                  "  pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
-                  "  pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "// 1. Parse the JSON response",
+                  "const response = pm.response.json();",
+                  "",
+                  "// 2. Check if the login was successful",
+                  "if (response.success === true) {",
+                  "    // 3. Save to Collection Variables",
+                  "    // Using the exact keys from your JSON: data.access_token and data.refresh_token",
+                  "    pm.collectionVariables.set('auth_token', response.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.data.refresh_token);",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "    console.log('✅ Admin login successful - tokens updated!');",
+                  "} else {",
+                  "    console.error('❌ Login failed: ' + (response.message || 'Unknown error'));",
                   "}"
                 ]
               }
@@ -194,11 +202,19 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  var jsonData = pm.response.json();",
-                  "  pm.collectionVariables.set('auth_token', jsonData.data.token);",
-                  "  pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
-                  "  pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "// 1. Parse the JSON response",
+                  "const response = pm.response.json();",
+                  "",
+                  "// 2. Check if the login was successful",
+                  "if (response.success === true) {",
+                  "    // 3. Save to Collection Variables",
+                  "    // Using the exact keys from your JSON: data.access_token and data.refresh_token",
+                  "    pm.collectionVariables.set('auth_token', response.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.data.refresh_token);",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "    console.log('✅ Lecturer login successful - tokens updated!');",
+                  "} else {",
+                  "    console.error('❌ Login failed: ' + (response.message || 'Unknown error'));",
                   "}"
                 ]
               }
@@ -231,11 +247,19 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  var jsonData = pm.response.json();",
-                  "  pm.collectionVariables.set('auth_token', jsonData.data.token);",
-                  "  pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
-                  "  pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "// 1. Parse the JSON response",
+                  "const response = pm.response.json();",
+                  "",
+                  "// 2. Check if the login was successful",
+                  "if (response.success === true) {",
+                  "    // 3. Save to Collection Variables",
+                  "    // Using the exact keys from your JSON: data.access_token and data.refresh_token",
+                  "    pm.collectionVariables.set('auth_token', response.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.data.refresh_token);",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "    console.log('✅ Student login successful - tokens updated!');",
+                  "} else {",
+                  "    console.error('❌ Login failed: ' + (response.message || 'Unknown error'));",
                   "}"
                 ]
               }
@@ -458,6 +482,143 @@
       ]
     },
     {
+      "name": "🎯 Learning Activities",
+      "item": [
+        {
+          "name": "List All Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities?courseId=cmng2bflc0003h6li0ilaka9v&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities"],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "cmng2bflc0003h6li0ilaka9v"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Activity (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"cmng2bflc0003h6li0ilaka9v\",\n  \"title\": \"JavaScript Basics Module\",\n  \"description\": \"Learn the fundamentals of JavaScript programming\",\n  \"activityType\": \"CONTENT\",\n  \"contentFile\": \"https://example.com/js-basics.pdf\",\n  \"instructions\": \"Complete all sections and take the quiz\",\n  \"durationMinutes\": 120,\n  \"maxAttempts\": 3,\n  \"passingScore\": 70,\n  \"startDate\": \"2024-01-15T09:00:00Z\",\n  \"endDate\": \"2024-02-15T17:00:00Z\",\n  \"points\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/cmnfrpaj50088198h77oq99zs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "cmnfrpaj50088198h77oq99zs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Activity (Lecturer/Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Activity Title\",\n  \"description\": \"Updated description\",\n  \"durationMinutes\": 150,\n  \"passingScore\": 75\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/cmnfrpaj50088198h77oq99zs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "cmnfrpaj50088198h77oq99zs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Publish Activity (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/cmnfrpaj50088198h77oq99zs/publish",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "cmnfrpaj50088198h77oq99zs", "publish"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Activity (Lecturer/Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/cmnfrpaj50088198h77oq99zs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "cmnfrpaj50088198h77oq99zs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Progress (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/cmnfrpaj50088198h77oq99zs/progress",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "cmnfrpaj50088198h77oq99zs", "progress"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "📝 Exams",
       "item": [
         {
@@ -472,7 +633,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"course_id\": 1,\n  \"title\": \"Midterm Exam\",\n  \"description\": \"Midterm examination for JavaScript advanced concepts\",\n  \"totalQuestions\": 50,\n  \"totalMarks\": 100,\n  \"duration\": 120,\n  \"passingMarks\": 50\n}"
+              "raw": "{\n  \"activityId\": \"cmnfrpaj50088198h77oq99zs\",\n  \"title\": \"Midterm Exam\",\n  \"description\": \"Midterm examination for JavaScript advanced concepts\",\n  \"totalQuestions\": 50,\n  \"timeLimit\": 120,\n  \"passingScore\": 50,\n  \"shuffleQuestions\": true,\n  \"startDate\": \"2024-01-15T09:00:00Z\",\n  \"endDate\": \"2024-01-15T11:00:00Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/exams",
@@ -488,9 +649,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/exams/1",
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "exams", "1"]
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs"]
             }
           },
           "response": []
@@ -510,9 +671,9 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/exams/1/start",
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs/start",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "exams", "1", "start"]
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs", "start"]
             }
           },
           "response": []
@@ -529,12 +690,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"attemptId\": 1,\n  \"answers\": [\n    {\n      \"questionId\": 1,\n      \"selectedOption\": \"A\"\n    }\n  ]\n}"
+              "raw": "{\n  \"attemptId\": \"attempt_id_here\",\n  \"answers\": [\n    {\n      \"questionId\": \"question_id_1\",\n      \"selectedOption\": \"A\"\n    },\n    {\n      \"questionId\": \"question_id_2\",\n      \"selectedOption\": \"B\"\n    }\n  ]\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/exams/1/submit",
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs/submit",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "exams", "1", "submit"]
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs", "submit"]
             }
           },
           "response": []
@@ -545,9 +706,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/exams/1/attempts/1/results",
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs/attempts/attempt_id_here/results",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "exams", "1", "attempts", "1", "results"]
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs", "attempts", "attempt_id_here", "results"]
             }
           },
           "response": []
@@ -558,9 +719,62 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/exams/1/attempts",
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs/attempts",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "exams", "1", "attempts"]
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs", "attempts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Exams for Course",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams?courseId=cmng2bflc0003h6li0ilaka9v&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams"],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "cmng2bflc0003h6li0ilaka9v"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Exam (Lecturer/Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exam Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/cmnfrpaj50088198h77oq99zs/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "cmnfrpaj50088198h77oq99zs", "stats"]
             }
           },
           "response": []

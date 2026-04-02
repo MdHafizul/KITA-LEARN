@@ -10,6 +10,7 @@ const {
 const {
   authRoutes,
   courseRoutes,
+  activityRoutes,
   examRoutes,
   submissionRoutes,
   gradingRoutes,
@@ -236,6 +237,9 @@ apiV1.use('/auth', authRoutes);
 
 // Course Management Routes
 apiV1.use('/courses', courseRoutes);
+
+// Learning Activity Routes
+apiV1.use('/activities', activityRoutes);
 
 // Exam Management Routes
 apiV1.use('/exams', examRoutes);

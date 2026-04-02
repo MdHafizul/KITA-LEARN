@@ -74,19 +74,61 @@ const CourseResponseDTO = z.object({
 });
 
 // ============================================
+// LEARNING ACTIVITY DTOs
+// ============================================
+
+const ActivityCreateDTO = z.object({
+  courseId: z.union([z.string().cuid(), z.string().uuid()]),
+  title: z.string().min(3).max(200),
+  description: z.string().optional(),
+  activityType: z.enum(['CONTENT', 'ASSIGNMENT', 'QUIZ', 'EXAM', 'DISCUSSION']),
+  contentFile: z.string().optional(),
+  instructions: z.string().optional(),
+  durationMinutes: z.number().int().min(1).optional(),
+  maxAttempts: z.number().int().min(1).optional(),
+  passingScore: z.number().int().min(0).max(100).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  points: z.number().int().min(0).default(0),
+});
+
+const ActivityUpdateDTO = z.object({
+  title: z.string().min(3).max(200).optional(),
+  description: z.string().optional(),
+  contentFile: z.string().optional(),
+  instructions: z.string().optional(),
+  durationMinutes: z.number().int().min(1).optional(),
+  maxAttempts: z.number().int().min(1).optional(),
+  passingScore: z.number().int().min(0).max(100).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  points: z.number().int().min(0).optional(),
+});
+
+const ActivityResponseDTO = z.object({
+  id: z.string(),
+  courseId: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  activityType: z.string(),
+  isPublished: z.boolean(),
+  createdAt: z.string(),
+});
+
+// ============================================
 // EXAM DTOs
 // ============================================
 
 const ExamCreateDTO = z.object({
   title: z.string().min(3).max(200),
   description: z.string().optional(),
-  courseId: z.string().uuid(),
+  activityId: z.union([z.string().cuid(), z.string().uuid()]),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
-  durationMinutes: z.number().min(5).max(480),
+  timeLimit: z.number().min(5).max(480),
   totalQuestions: z.number().min(1),
-  maxAttempts: z.number().min(1).default(1),
-  passingScore: z.number().min(0).max(100).default(60),
+  passingScore: z.number().min(0).max(100).default(50),
+  shuffleQuestions: z.boolean().optional().default(true),
 });
 
 const ExamUpdateDTO = z.object({
@@ -94,8 +136,9 @@ const ExamUpdateDTO = z.object({
   description: z.string().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  durationMinutes: z.number().min(5).max(480).optional(),
+  timeLimit: z.number().min(5).max(480).optional(),
   passingScore: z.number().min(0).max(100).optional(),
+  shuffleQuestions: z.boolean().optional(),
 });
 
 const ExamResponseDTO = z.object({
@@ -262,6 +305,11 @@ module.exports = {
   CourseCreateDTO,
   CourseUpdateDTO,
   CourseResponseDTO,
+
+  // Learning Activity
+  ActivityCreateDTO,
+  ActivityUpdateDTO,
+  ActivityResponseDTO,
 
   // Exam
   ExamCreateDTO,
