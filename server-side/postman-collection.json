@@ -1,0 +1,1031 @@
+{
+  "info": {
+    "_postman_id": "kitalearn-lms-api-v1",
+    "name": "KitaLearn LMS API - Production Ready",
+    "description": "Complete API collection for KitaLearn Learning Management System\n\n**Authentication**: All protected endpoints require JWT Bearer token\n\n**Test Users**:\n- Admin: admin@lms.test / admin123456\n- Lecturer: lecturer@lms.test / lecturer123456\n- Student: student@lms.test / student123456\n\n**Environment Variables**:\n- {{base_url}}: http://localhost:3000\n- {{auth_token}}: Automatically set after login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🏥 System Health & Status",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Database Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/db",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "health", "db"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Redis Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/redis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "health", "redis"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job Queues Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/queues",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "health", "queues"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "System Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "metrics"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "System Diagnostics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/diagnostics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diagnostics"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register New User (All Roles)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('user_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@lms.test\",\n  \"password\": \"password123456\",\n  \"full_name\": \"New Student User\",\n  \"phone_number\": \"+1-555-555-5555\",\n  \"role\": \"student\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('auth_token', jsonData.data.token);",
+                  "  pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
+                  "  pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@lms.test\",\n  \"password\": \"admin123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Lecturer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('auth_token', jsonData.data.token);",
+                  "  pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
+                  "  pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lecturer@lms.test\",\n  \"password\": \"lecturer123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('auth_token', jsonData.data.token);",
+                  "  pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
+                  "  pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@lms.test\",\n  \"password\": \"student123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated User Name\",\n  \"phone_number\": \"+1-999-999-9999\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📚 Courses",
+      "item": [
+        {
+          "name": "List All Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced JavaScript Concepts\",\n  \"description\": \"Master advanced JavaScript patterns, async programming, and modern ES6+ features\",\n  \"creditHours\": 3,\n  \"duration\": 12,\n  \"difficultyLevel\": \"ADVANCED\",\n  \"category\": \"Programming\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Course Title\",\n  \"description\": \"Updated description\",\n  \"creditHours\": 4\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Publish Course",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/1/publish",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "1", "publish"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Course",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/1/archive",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "1", "archive"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📝 Exams",
+      "item": [
+        {
+          "name": "Create Exam (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": 1,\n  \"title\": \"Midterm Exam\",\n  \"description\": \"Midterm examination for JavaScript advanced concepts\",\n  \"totalQuestions\": 50,\n  \"totalMarks\": 100,\n  \"duration\": 120,\n  \"passingMarks\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exam Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Exam Attempt (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/1/start",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "1", "start"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Exam Answers (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attemptId\": 1,\n  \"answers\": [\n    {\n      \"questionId\": 1,\n      \"selectedOption\": \"A\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/1/submit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "1", "submit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exam Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/1/attempts/1/results",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "1", "attempts", "1", "results"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student Exam Attempts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/1/attempts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "1", "attempts"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 Assignments & Submissions",
+      "item": [
+        {
+          "name": "Submit Assignment (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignment_id\": 1,\n  \"submission_text\": \"Here is my assignment solution...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Submission Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grade Submission (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marks\": 85,\n  \"feedback\": \"Excellent work!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions/1/grade",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions", "1", "grade"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assignment Submissions (Lecturer)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions/assignment/1?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions", "assignment", "1"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Grading & Grades",
+      "item": [
+        {
+          "name": "Get Course Grades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grading/courses/1/grades?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grading", "courses", "1", "grades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student Grades in Course",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grading/courses/1/students/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grading", "courses", "1", "students", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course Grade Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grading/courses/1/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grading", "courses", "1", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student GPA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grading/students/1/gpa",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grading", "students", "1", "gpa"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎓 Certificates",
+      "item": [
+        {
+          "name": "Generate Certificate (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enrollmentId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "generate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Certificate Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Certificates (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/student/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "student", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Certificate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/1/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "1", "verify"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Certificate (Lecturer/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Student violated academic integrity policy\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/1/revoke",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "1", "revoke"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Certificate PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/1/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "1", "download"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 Enrollments",
+      "item": [
+        {
+          "name": "Enroll in Course (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course Enrollments (Lecturer/Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/courses/1?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "courses", "1"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Enrollment Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/1/progress",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "1", "progress"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Enrollment Complete",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/1/complete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "1", "complete"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unenroll from Course (Student)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔍 Audit & Activity Logs",
+      "item": [
+        {
+          "name": "Get System Audit Logs (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/logs?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit", "logs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/users/1/activity?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit", "users", "1", "activity"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course Change History (Lecturer/Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/courses/1/changes?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit", "courses", "1", "changes"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Audit Logs (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/export",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit", "export"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

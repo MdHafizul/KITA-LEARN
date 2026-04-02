@@ -32,11 +32,11 @@ const authMiddleware = (req, res, next) => {
     // Verify token
     const decoded = verifyAccessToken(token);
 
-    // Attach user to request
+    // Attach user to request (normalize role to uppercase for consistent comparison)
     req.user = {
       id: decoded.userId,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role?.toUpperCase() || 'USER'
     };
 
     next();
@@ -62,7 +62,11 @@ const requireRole = (allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    // Normalize both sides for case-insensitive comparison
+    const userRole = req.user.role?.toUpperCase();
+    const normalizedAllowedRoles = allowedRoles.map(role => role.toUpperCase());
+
+    if (!normalizedAllowedRoles.includes(userRole)) {
       return res.status(statusCodes.FORBIDDEN).json({
         success: false,
         error: 'Insufficient permissions',
@@ -86,7 +90,7 @@ const optionalAuth = (req, res, next) => {
       req.user = {
         id: decoded.userId,
         email: decoded.email,
-        role: decoded.role
+        role: decoded.role?.toUpperCase() || 'USER'
       };
     }
 

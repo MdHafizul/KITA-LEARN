@@ -5,15 +5,11 @@ const prisma = new PrismaClient();
 
 class CertificateService {
   /**
-   * Generate certificate for student
+   * Generate certificate from enrollment
    */
-  async generateCertificate(studentId, courseId) {
-    const enrollment = await prisma.enrollment.findFirst({
-      where: {
-        student_id: studentId,
-        course_id: parseInt(courseId),
-        status: 'completed'
-      },
+  async generateCertificate(enrollmentId, userId) {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
       include: {
         course: true,
         student: true
@@ -21,28 +17,32 @@ class CertificateService {
     });
 
     if (!enrollment) {
+      throw new ValidationException('Enrollment not found');
+    }
+
+    if (enrollment.status !== 'completed') {
       throw new ValidationException('Student has not completed this course');
     }
 
     // Check if already has certificate
     const existing = await prisma.certificate.findFirst({
       where: {
-        student_id: studentId,
-        course_id: parseInt(courseId)
+        userId: enrollment.userId,
+        courseId: enrollment.courseId
       }
     });
 
-    if (existing) {
+    if (existing && !existing.isRevoked) {
       return existing;
     }
 
     const certificate = await prisma.certificate.create({
       data: {
-        student_id: studentId,
-        course_id: parseInt(courseId),
-        issued_date: new Date(),
-        certificate_number: this.generateCertificateNumber(),
-        verification_token: this.generateToken()
+        userId: enrollment.userId,
+        courseId: enrollment.courseId,
+        issuedDate: new Date(),
+        certificateNumber: this.generateCertificateNumber(),
+        verificationCode: this.generateToken()
       }
     });
 
@@ -50,14 +50,11 @@ class CertificateService {
   }
 
   /**
-   * Verify certificate authenticity
+   * Get certificate by ID
    */
-  async verifyCertificate(certificateNumber, verificationToken) {
-    const certificate = await prisma.certificate.findFirst({
-      where: {
-        certificate_number: certificateNumber,
-        verification_token: verificationToken
-      },
+  async getCertificateById(certificateId) {
+    const certificate = await prisma.certificate.findUnique({
+      where: { id: certificateId },
       include: {
         student: true,
         course: true
@@ -65,28 +62,42 @@ class CertificateService {
     });
 
     if (!certificate) {
-      throw new ValidationException('Invalid certificate');
+      throw new ValidationException('Certificate not found');
     }
 
-    return {
-      is_valid: true,
-      student_name: certificate.student.full_name,
-      course_title: certificate.course.title,
-      issued_date: certificate.issued_date,
-      certificate_number: certificate.certificate_number
-    };
+    return certificate;
   }
 
   /**
-   * Get student certificates
+   * Get user's certificates (paginated)
    */
-  async getStudentCertificates(studentId) {
+  async getUserCertificates(userId, { page = 1, limit = 50 } = {}) {
+    const skip = (page - 1) * limit;
+
     const certificates = await prisma.certificate.findMany({
-      where: { student_id: studentId },
-      include: { course: true }
+      where: {
+        userId,
+        isRevoked: false
+      },
+      include: { course: true },
+      skip,
+      take: limit,
+      orderBy: { issuedDate: 'desc' }
     });
 
-    return certificates;
+    const total = await prisma.certificate.count({
+      where: {
+        userId,
+        isRevoked: false
+      }
+    });
+
+    return {
+      certificates,
+      page,
+      limit,
+      total
+    };
   }
 
   /**
@@ -96,14 +107,20 @@ class CertificateService {
     const skip = (page - 1) * limit;
 
     const certificates = await prisma.certificate.findMany({
-      where: { course_id: parseInt(courseId) },
+      where: {
+        courseId,
+        isRevoked: false
+      },
       include: { student: true },
       skip,
       take: limit
     });
 
     const total = await prisma.certificate.count({
-      where: { course_id: parseInt(courseId) }
+      where: {
+        courseId,
+        isRevoked: false
+      }
     });
 
     return {
@@ -118,35 +135,26 @@ class CertificateService {
   }
 
   /**
-   * Revoke certificate
+   * Get student certificates
    */
-  async revokeCertificate(certificateId, reason) {
-    const certificate = await prisma.certificate.findUnique({
-      where: { id: parseInt(certificateId) }
+  async getStudentCertificates(studentId) {
+    const certificates = await prisma.certificate.findMany({
+      where: {
+        userId: studentId,
+        isRevoked: false
+      },
+      include: { course: true }
     });
 
-    if (!certificate) {
-      throw new ValidationException('Certificate not found');
-    }
-
-    const revoked = await prisma.certificate.update({
-      where: { id: parseInt(certificateId) },
-      data: {
-        is_revoked: true,
-        revocation_reason: reason,
-        revoked_at: new Date()
-      }
-    });
-
-    return revoked;
+    return certificates;
   }
 
   /**
-   * Generate certificate PDF (placeholder for actual PDF generation)
+   * Verify certificate authenticity by ID
    */
-  async generateCertificatePDF(certificateId) {
+  async verifyCertificate(certificateId) {
     const certificate = await prisma.certificate.findUnique({
-      where: { id: parseInt(certificateId) },
+      where: { id: certificateId },
       include: {
         student: true,
         course: true
@@ -154,18 +162,70 @@ class CertificateService {
     });
 
     if (!certificate) {
+      throw new ValidationException('Invalid certificate');
+    }
+
+    if (certificate.isRevoked) {
+      return {
+        isValid: false,
+        status: 'revoked',
+        message: 'This certificate has been revoked'
+      };
+    }
+
+    return {
+      isValid: true,
+      studentName: certificate.student.fullName,
+      courseTitle: certificate.course.title,
+      issuedDate: certificate.issuedDate,
+      certificateNumber: certificate.certificateNumber
+    };
+  }
+
+  /**
+   * Generate certificate PDF
+   */
+  async generatePDF(certificateId) {
+    const certificate = await this.getCertificateById(certificateId);
+
+    if (!certificate) {
+      return null;
+    }
+
+    // For now, return a simple placeholder
+    // In production, you'd use a library like PDFKit or html-pdf
+    const pdfContent = Buffer.from(
+      `Certificate of Completion\n\n` +
+      `Student: ${certificate.student.fullName}\n` +
+      `Course: ${certificate.course.title}\n` +
+      `Date: ${certificate.issuedDate.toLocaleDateString()}\n` +
+      `Certificate #: ${certificate.certificateNumber}`
+    );
+
+    return pdfContent;
+  }
+
+  /**
+   * Revoke certificate
+   */
+  async revokeCertificate(certificateId, reason) {
+    const certificate = await prisma.certificate.findUnique({
+      where: { id: certificateId }
+    });
+
+    if (!certificate) {
       throw new ValidationException('Certificate not found');
     }
 
-    // In production, use a library like PDFKit to generate actual PDF
-    // For now, return certificate data that would be used to generate PDF
-    return {
-      student_name: certificate.student.full_name,
-      course_title: certificate.course.title,
-      issued_date: certificate.issued_date.toDateString(),
-      certificate_number: certificate.certificate_number,
-      verification_url: `https://lms.example.com/verify/${certificate.certificate_number}/${certificate.verification_token}`
-    };
+    const revoked = await prisma.certificate.update({
+      where: { id: certificateId },
+      data: {
+        isRevoked: true,
+        revokeReason: reason
+      }
+    });
+
+    return revoked;
   }
 
   /**

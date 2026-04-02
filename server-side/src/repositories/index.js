@@ -26,24 +26,4 @@ const repositories = {
   certificate: new CertificateRepository(),
 };
 
-/**
- * Usage Example:
- *
- * // In your service or controller
- * const { user, course, exam } = require('./repositories');
- *
- * // Find a user
- * const user = await repositories.user.findById(userId);
- *
- * // Find courses
- * const courses = await repositories.course.findPublished();
- *
- * // Create enrollment
- * const enrollment = await repositories.enrollment.create({
- *   userId,
- *   courseId,
- *   enrolledAt: new Date(),
- * });
- */
-
 module.exports = repositories;

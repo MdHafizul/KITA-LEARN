@@ -42,17 +42,19 @@ const UserResponseDTO = z.object({
 const CourseCreateDTO = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  code: z.string().min(2).max(10),
-  credits: z.number().min(1).max(10),
-  instructorId: z.string().uuid(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  creditHours: z.number().int().min(1).max(10, 'Credit hours must be between 1-10'),
+  maxStudents: z.number().int().min(1).max(500, 'Max students must be between 1-500'),
+  difficultyLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED'], 'Invalid difficulty level'),
+  startDate: z.string().datetime('Invalid start date format'),
+  endDate: z.string().datetime('Invalid end date format'),
 });
 
 const CourseUpdateDTO = z.object({
   title: z.string().min(3).max(200).optional(),
   description: z.string().min(10).optional(),
-  credits: z.number().min(1).max(10).optional(),
+  creditHours: z.number().int().min(1).max(10).optional(),
+  maxStudents: z.number().int().min(1).max(500).optional(),
+  difficultyLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),

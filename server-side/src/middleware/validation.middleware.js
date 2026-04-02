@@ -35,25 +35,36 @@ const validateRequest = (schema) => {
   };
 };
 
-module.exports = {
-  validateRequest
-};
+/**
+ * Validate request body (alias for validateRequest)
+ */
+const validateBody = (schema) => validateRequest(schema);
+
+/**
+ * Validate query parameters
+ */
+const validateQuery = (schema) => {
+  return (req, res, next) => {
+    try {
+      const validated = schema.parse(req.query);
+      req.validated = { ...req.validated, query: validated };
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const messages = error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message
+        }));
+
+        return res.status(statusCodes.BAD_REQUEST).json({
+          success: false,
           error: 'Query validation failed',
           code: 'VALIDATION_ERROR',
-          details: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
-          })),
-          status: 400
+          details: messages
         });
       }
 
-      res.status(500).json({
-        success: false,
-        error: 'Internal validation error',
-        code: 'SERVER_ERROR',
-        status: 500
-      });
+      next(error);
     }
   };
 };
@@ -62,37 +73,35 @@ module.exports = {
  * Validate URL parameters
  */
 const validateParams = (schema) => {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     try {
-      const validated = await schema.parseAsync(req.params);
-      req.validated = { ...req.validated, ...validated };
+      const validated = schema.parse(req.params);
+      req.validated = { ...req.validated, params: validated };
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({
+        const messages = error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message
+        }));
+
+        return res.status(statusCodes.BAD_REQUEST).json({
           success: false,
           error: 'Parameter validation failed',
           code: 'VALIDATION_ERROR',
-          details: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
-          })),
-          status: 400
+          details: messages
         });
       }
 
-      res.status(500).json({
-        success: false,
-        error: 'Internal validation error',
-        code: 'SERVER_ERROR',
-        status: 500
-      });
+      next(error);
     }
   };
 };
 
 module.exports = {
+  validateRequest,
   validateBody,
   validateQuery,
   validateParams
 };
+

@@ -13,7 +13,7 @@ class AuthController {
    * POST /api/v1/auth/login
    * Body: { email, password }
    */
-  static async login(req, res, next) {
+  async login(req, res, next) {
     try {
       // Validate request
       const validated = LoginDTO.parse(req.body);
@@ -42,7 +42,7 @@ class AuthController {
    * POST /api/v1/auth/register
    * Body: { email, password, full_name, phone_number, role }
    */
-  static async register(req, res, next) {
+  async register(req, res, next) {
     try {
       // Validate request
       const validated = RegisterDTO.parse(req.body);
@@ -71,7 +71,7 @@ class AuthController {
    * POST /api/v1/auth/refresh
    * Body: { refreshToken }
    */
-  static async refreshToken(req, res, next) {
+  async refreshToken(req, res, next) {
     try {
       // Validate request
       const validated = RefreshTokenDTO.parse(req.body);
@@ -97,7 +97,7 @@ class AuthController {
    * GET /api/v1/auth/profile
    * Headers: Authorization: Bearer {token}
    */
-  static async getProfile(req, res, next) {
+  async getProfile(req, res, next) {
     try {
       const userId = req.user.id;
 
@@ -119,10 +119,10 @@ class AuthController {
    * PUT /api/v1/auth/profile
    * Body: { full_name, phone_number, email }
    */
-  static async updateProfile(req, res, next) {
+  async updateProfile(req, res, next) {
     try {
       const userId = req.user.id;
-      
+
       // Validate request
       const validated = UpdateProfileDTO.parse(req.body);
 
@@ -144,10 +144,10 @@ class AuthController {
    * POST /api/v1/auth/change-password
    * Body: { currentPassword, newPassword, confirmPassword }
    */
-  static async changePassword(req, res, next) {
+  async changePassword(req, res, next) {
     try {
       const userId = req.user.id;
-      
+
       // Validate request
       const validated = ChangePasswordDTO.parse(req.body);
 
@@ -167,7 +167,7 @@ class AuthController {
    * Logout (optional - for logging logout events)
    * POST /api/v1/auth/logout
    */
-  static async logout(req, res, next) {
+  async logout(req, res, next) {
     try {
       res.status(statusCodes.OK).json({
         success: true,
@@ -179,4 +179,5 @@ class AuthController {
   }
 }
 
-module.exports = AuthController;
+module.exports = new AuthController();
+

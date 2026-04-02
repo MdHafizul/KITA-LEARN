@@ -13,6 +13,17 @@ const enrollmentService = require('./enrollment.service');
 const auditService = require('./audit.service');
 
 module.exports = {
+  // PascalCase exports (for controller destructuring)
+  AuthService: authService,
+  CourseService: courseService,
+  ExamService: examService,
+  SubmissionService: submissionService,
+  GradingService: gradingService,
+  CertificateService: certificateService,
+  EnrollmentService: enrollmentService,
+  AuditService: auditService,
+
+  // camelCase exports (for direct imports like require('./services/auth.service'))
   authService,
   courseService,
   examService,

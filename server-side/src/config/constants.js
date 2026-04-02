@@ -42,21 +42,21 @@ const permissions = {
   EDIT_COURSE: 'edit_course',
   DELETE_COURSE: 'delete_course',
   PUBLISH_COURSE: 'publish_course',
-  
+
   // Exam permissions
   CREATE_EXAM: 'create_exam',
   EDIT_EXAM: 'edit_exam',
   DELETE_EXAM: 'delete_exam',
   GRADE_EXAM: 'grade_exam',
-  
+
   // Assignment permissions
   CREATE_ASSIGNMENT: 'create_assignment',
   GRADE_ASSIGNMENT: 'grade_assignment',
-  
+
   // User permissions
   MANAGE_USERS: 'manage_users',
   VIEW_REPORTS: 'view_reports',
-  
+
   // Student permissions
   VIEW_GRADES: 'view_grades',
   SUBMIT_ASSIGNMENT: 'submit_assignment'

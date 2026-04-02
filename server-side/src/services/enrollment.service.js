@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { ValidationException } = require('../exceptions');
-const { enrollmentRepository } = require('../repositories');
+const { enrollment: enrollmentRepository } = require('../repositories');
 
 const prisma = new PrismaClient();
 
@@ -10,157 +10,240 @@ class EnrollmentService {
    */
   async enrollStudent(courseId, studentId) {
     const course = await prisma.course.findUnique({
-      where: { id: parseInt(courseId) }
+      where: { id: courseId }
     });
 
     if (!course) {
-      throw new ValidationException('Course not found');
+      return {
+        success: false,
+        error: 'Course not found',
+        code: 'COURSE_NOT_FOUND'
+      };
     }
 
     // Check if already enrolled
     const existing = await prisma.enrollment.findFirst({
       where: {
-        course_id: parseInt(courseId),
-        student_id: studentId
+        courseId,
+        userId: studentId
       }
     });
 
     if (existing) {
-      throw new ValidationException('Student is already enrolled in this course');
+      return {
+        success: false,
+        error: 'Student is already enrolled in this course',
+        code: 'ALREADY_ENROLLED'
+      };
     }
 
     // Check course capacity
     const enrollmentCount = await prisma.enrollment.count({
-      where: { course_id: parseInt(courseId), status: 'active' }
+      where: { courseId, status: 'active' }
     });
 
-    if (enrollmentCount >= course.max_students) {
-      throw new ValidationException('Course has reached maximum capacity');
+    if (enrollmentCount >= course.maxStudents) {
+      return {
+        success: false,
+        error: 'Course has reached maximum capacity',
+        code: 'CAPACITY_FULL'
+      };
     }
 
     const enrollment = await prisma.enrollment.create({
       data: {
-        course_id: parseInt(courseId),
-        student_id: studentId,
-        enrolled_at: new Date(),
+        courseId,
+        userId: studentId,
+        enrollmentDate: new Date(),
         status: 'active'
       }
     });
 
-    return enrollment;
+    return {
+      success: true,
+      enrollment
+    };
   }
 
   /**
    * Get student enrollments
    */
-  async getStudentEnrollments(studentId, page = 1, limit = 20) {
-    const enrollments = await enrollmentRepository.getStudentEnrollments(studentId, page, limit);
-    return enrollments;
+  async getStudentEnrollments(studentId, { page = 1, limit = 20 }) {
+    const skip = (page - 1) * limit;
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { userId: studentId },
+      include: { course: true },
+      skip,
+      take: limit,
+      orderBy: { enrollmentDate: 'desc' }
+    });
+
+    const total = await prisma.enrollment.count({
+      where: { userId: studentId }
+    });
+
+    return {
+      enrollments,
+      page,
+      limit,
+      total
+    };
   }
 
   /**
-   * Get course enrollments
+   * Get course enrollments (Lecturer view)
    */
-  async getCourseEnrollments(courseId, page = 1, limit = 50) {
-    const enrollments = await enrollmentRepository.getCourseEnrollments(courseId, page, limit);
-    return enrollments;
+  async getCourseEnrollments(courseId, lecturerId, { page = 1, limit = 50 }) {
+    const course = await prisma.course.findUnique({
+      where: { id: courseId }
+    });
+
+    if (!course || course.lecturerId !== lecturerId) {
+      return {
+        success: false,
+        error: 'Access denied'
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId, status: 'active' },
+      include: { student: true },
+      skip,
+      take: limit
+    });
+
+    const total = await prisma.enrollment.count({
+      where: { courseId, status: 'active' }
+    });
+
+    return {
+      success: true,
+      enrollments,
+      page,
+      limit,
+      total
+    };
   }
 
   /**
-   * Get student progress in course
+   * Get enrollment progress
    */
-  async getStudentProgress(courseId, studentId) {
-    const progress = await enrollmentRepository.getStudentProgress(courseId, studentId);
-    return progress;
-  }
-
-  /**
-   * Mark enrollment as completed
-   */
-  async completeEnrollment(courseId, studentId) {
-    const enrollment = await prisma.enrollment.findFirst({
-      where: {
-        course_id: parseInt(courseId),
-        student_id: studentId
-      }
+  async getEnrollmentProgress(enrollmentId) {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: { course: true }
     });
 
     if (!enrollment) {
-      throw new ValidationException('Enrollment not found');
+      return null;
     }
 
-    const completed = await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: {
-        status: 'completed',
-        completed_at: new Date()
+    // Calculate progress based on completed activities
+    const activities = await prisma.learningActivity.findMany({
+      where: { courseId: enrollment.courseId }
+    });
+
+    const completedActivities = await prisma.activityProgress.count({
+      where: {
+        userId: enrollment.userId,
+        enrollmentId,
+        status: 'COMPLETED'
       }
     });
 
-    return completed;
+    const progress = activities.length > 0 ? (completedActivities / activities.length) * 100 : 0;
+
+    return {
+      enrollmentId,
+      courseId: enrollment.courseId,
+      courseName: enrollment.course.title,
+      totalActivities: activities.length,
+      completedActivities,
+      progressPercentage: Math.round(progress),
+      status: enrollment.status,
+      enrolledAt: enrollment.enrollmentDate
+    };
   }
 
   /**
    * Unenroll student from course
    */
-  async unenrollStudent(courseId, studentId) {
-    const enrollment = await prisma.enrollment.findFirst({
-      where: {
-        course_id: parseInt(courseId),
-        student_id: studentId
-      }
+  async unenrollStudent(enrollmentId, userId) {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId }
     });
 
     if (!enrollment) {
-      throw new ValidationException('Enrollment not found');
+      return {
+        success: false,
+        error: 'Enrollment not found'
+      };
+    }
+
+    // Only the student or admin can unenroll
+    if (enrollment.userId !== userId) {
+      return {
+        success: false,
+        error: 'Access denied'
+      };
     }
 
     const unenrolled = await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: { status: 'withdrawn', unenrolled_at: new Date() }
-    });
-
-    return unenrolled;
-  }
-
-  /**
-   * Get enrollment details
-   */
-  async getEnrollmentDetails(enrollmentId) {
-    const enrollment = await prisma.enrollment.findUnique({
-      where: { id: parseInt(enrollmentId) },
-      include: {
-        course: true,
-        student: true
+      where: { id: enrollmentId },
+      data: {
+        status: 'withdrawn',
+        completionDate: new Date()
       }
     });
 
-    if (!enrollment) {
-      throw new ValidationException('Enrollment not found');
-    }
-
-    return enrollment;
+    return {
+      success: true,
+      data: unenrolled
+    };
   }
 
   /**
-   * Get class roster
+   * Complete enrollment (mark as completed)
    */
-  async getClassRoster(courseId) {
-    const enrollments = await prisma.enrollment.findMany({
-      where: {
-        course_id: parseInt(courseId),
-        status: 'active'
-      },
-      include: { student: true }
+  async completeEnrollment(enrollmentId, userId) {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId }
     });
 
-    return enrollments.map(e => ({
-      student_id: e.student_id,
-      student_name: e.student.full_name,
-      email: e.student.email,
-      phone: e.student.phone_number,
-      enrolled_at: e.enrolled_at
-    }));
+    if (!enrollment) {
+      return {
+        success: false,
+        error: 'Enrollment not found'
+      };
+    }
+
+    // Only lecturer of the course or admin can mark complete
+    const course = await prisma.course.findUnique({
+      where: { id: enrollment.courseId }
+    });
+
+    if (course.lecturerId !== userId) {
+      return {
+        success: false,
+        error: 'Access denied'
+      };
+    }
+
+    const updated = await prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: {
+        status: 'completed',
+        completionDate: new Date()
+      }
+    });
+
+    return {
+      success: true,
+      data: updated
+    };
   }
 }
 

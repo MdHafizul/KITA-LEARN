@@ -7,7 +7,7 @@ const { z } = require('zod');
 
 const courseRoutes = express.Router();
 
-const CourseIdDTO = z.object({ id: z.string().uuid() });
+const CourseIdDTO = z.object({ id: z.union([z.string().cuid(), z.string().uuid()]) });
 
 /**
  * GET /api/v1/courses

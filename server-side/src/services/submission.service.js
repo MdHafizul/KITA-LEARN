@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { ValidationException } = require('../exceptions');
-const { submissionRepository, gradeRepository } = require('../repositories');
+const { submission: submissionRepository, grade: gradeRepository } = require('../repositories');
 
 const prisma = new PrismaClient();
 
@@ -8,164 +8,267 @@ class SubmissionService {
   /**
    * Submit an assignment
    */
-  async submitAssignment(assignmentId, studentId, submission_text, file_path = null) {
-    const assignment = await prisma.assignment.findUnique({
-      where: { id: parseInt(assignmentId) },
+  async submitAssignment(activityId, studentId, { content, attachmentUrl }) {
+    const activity = await prisma.learningActivity.findUnique({
+      where: { id: activityId },
       include: { course: true }
     });
 
-    if (!assignment) {
-      throw new ValidationException('Assignment not found');
+    if (!activity) {
+      return {
+        success: false,
+        error: 'Activity not found',
+        code: 'ACTIVITY_NOT_FOUND'
+      };
     }
 
     // Check if student is enrolled
     const enrollment = await prisma.enrollment.findFirst({
       where: {
-        course_id: assignment.course_id,
-        student_id: studentId,
+        courseId: activity.courseId,
+        userId: studentId,
         status: 'active'
       }
     });
 
     if (!enrollment) {
-      throw new ValidationException('Student is not enrolled in this course');
-    }
-
-    // Check deadline
-    const now = new Date();
-    if (now > new Date(assignment.due_date)) {
-      throw new ValidationException('Assignment deadline has passed');
+      return {
+        success: false,
+        error: 'Student is not enrolled in this course',
+        code: 'NOT_ENROLLED'
+      };
     }
 
     // Check if already submitted
     const existingSubmission = await prisma.submission.findFirst({
       where: {
-        assignment_id: parseInt(assignmentId),
-        student_id: studentId
+        activityId,
+        userId: studentId
       }
     });
 
-    if (existingSubmission && existingSubmission.status === 'submitted') {
-      throw new ValidationException('Assignment already submitted');
+    if (existingSubmission && existingSubmission.status === 'SUBMITTED') {
+      return {
+        success: false,
+        error: 'Assignment already submitted',
+        code: 'ALREADY_SUBMITTED'
+      };
     }
 
     const submission = await prisma.submission.create({
       data: {
-        assignment_id: parseInt(assignmentId),
-        student_id: studentId,
-        submission_text,
-        file_path,
-        submitted_at: new Date(),
-        status: 'submitted'
+        activityId,
+        userId: studentId,
+        submissionContent: content,
+        attachmentUrl,
+        submittedAt: new Date(),
+        status: 'SUBMITTED'
       }
     });
 
     return {
-      id: submission.id,
-      assignment_id: submission.assignment_id,
-      submitted_at: submission.submitted_at,
-      message: 'Assignment submitted successfully'
+      success: true,
+      submission: {
+        id: submission.id,
+        activityId: submission.activityId,
+        submittedAt: submission.submittedAt
+      }
     };
   }
 
   /**
    * Grade a submission
    */
-  async gradeSubmission(submissionId, score, feedback, lecturerId) {
+  async gradeSubmission(submissionId, lecturerId, { score, feedback }) {
     const submission = await prisma.submission.findUnique({
-      where: { id: parseInt(submissionId) },
+      where: { id: submissionId },
       include: {
-        assignment: {
+        activity: {
           include: { course: { include: { lecturer: true } } }
         }
       }
     });
 
     if (!submission) {
-      throw new ValidationException('Submission not found');
+      return {
+        success: false,
+        error: 'Submission not found',
+        code: 'NOT_FOUND'
+      };
     }
 
-    if (submission.assignment.course.lecturer.user_id !== lecturerId) {
-      throw new ValidationException('Only course lecturer can grade submissions');
+    if (submission.activity.course.lecturerId !== lecturerId) {
+      return {
+        success: false,
+        error: 'Only course lecturer can grade submissions',
+        code: 'FORBIDDEN'
+      };
     }
 
     const graded = await prisma.submission.update({
-      where: { id: parseInt(submissionId) },
+      where: { id: submissionId },
       data: {
         score: parseFloat(score),
         feedback,
-        graded_at: new Date(),
-        status: 'graded'
+        gradeTime: new Date(),
+        status: 'GRADED'
       }
     });
 
     // Create grade record
-    await gradeRepository.upsertGrade({
-      student_id: submission.student_id,
-      assignment_id: submission.assignment_id,
-      score: parseFloat(score),
-      passed: parseFloat(score) >= (submission.assignment.passing_score || 60)
+    await prisma.grade.upsert({
+      where: {
+        userId_courseId: {
+          userId: submission.userId,
+          courseId: submission.activity.courseId
+        }
+      },
+      update: {
+        score: parseFloat(score)
+      },
+      create: {
+        userId: submission.userId,
+        courseId: submission.activity.courseId,
+        score: parseFloat(score)
+      }
     });
 
-    return graded;
+    return {
+      success: true,
+      submission: graded
+    };
   }
 
   /**
    * Get submission details
    */
   async getSubmission(submissionId) {
-    const submission = await submissionRepository.findById(submissionId);
+    const submission = await prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: { activity: true }
+    });
+
     return submission;
   }
 
   /**
-   * Get all submissions for an assignment
+   * Get all submissions for an activity
    */
-  async getAssignmentSubmissions(assignmentId, page = 1, limit = 20) {
-    const submissions = await submissionRepository.findByAssignment(assignmentId, page, limit);
-    return submissions;
+  async getAllSubmissions(activityId, { page = 1, limit = 20 }, lecturerId) {
+    const activity = await prisma.learningActivity.findUnique({
+      where: { id: activityId },
+      include: { course: true }
+    });
+
+    if (!activity || activity.course.lecturerId !== lecturerId) {
+      throw new ValidationException('Access denied');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const submissions = await prisma.submission.findMany({
+      where: { activityId },
+      include: { student: true },
+      skip,
+      take: limit,
+      orderBy: { submittedAt: 'desc' }
+    });
+
+    const total = await prisma.submission.count({
+      where: { activityId }
+    });
+
+    return {
+      submissions,
+      page,
+      limit,
+      total
+    };
   }
 
   /**
-   * Get submissions by student
+   * Get user's submissions
    */
-  async getStudentSubmissions(studentId, page = 1, limit = 20) {
-    const submissions = await submissionRepository.findByStudent(studentId, page, limit);
-    return submissions;
+  async getUserSubmissions(userId, { page = 1, limit = 20 }) {
+    const skip = (page - 1) * limit;
+
+    const submissions = await prisma.submission.findMany({
+      where: { userId },
+      include: { activity: true },
+      skip,
+      take: limit,
+      orderBy: { submittedAt: 'desc' }
+    });
+
+    const total = await prisma.submission.count({
+      where: { userId }
+    });
+
+    return {
+      submissions,
+      page,
+      limit,
+      total
+    };
+  }
+
+  /**
+   * Get assignment submissions
+   */
+  async getAssignmentSubmissions(assignmentId, { page = 1, limit = 20 }, lecturerId) {
+    const skip = (page - 1) * limit;
+
+    const submissions = await prisma.submission.findMany({
+      where: { activityId: assignmentId },
+      include: { student: true },
+      skip,
+      take: limit
+    });
+
+    const total = await prisma.submission.count({
+      where: { activityId: assignmentId }
+    });
+
+    return {
+      submissions,
+      page,
+      limit,
+      total
+    };
   }
 
   /**
    * Get submission status
    */
-  async getSubmissionStatus(assignmentId, studentId) {
+  async getSubmissionStatus(activityId, studentId) {
     const submission = await prisma.submission.findFirst({
       where: {
-        assignment_id: parseInt(assignmentId),
-        student_id: studentId
+        activityId,
+        userId: studentId
       }
     });
 
     if (!submission) {
-      return { status: 'not_submitted' };
+      return { status: 'NOT_SUBMITTED' };
     }
 
     return {
       status: submission.status,
-      submitted_at: submission.submitted_at,
+      submittedAt: submission.submittedAt,
       score: submission.score,
       feedback: submission.feedback,
-      graded_at: submission.graded_at
+      gradedAt: submission.gradeTime
     };
   }
 
   /**
-   * Delete submission (soft delete)
+   * Delete submission
    */
   async deleteSubmission(submissionId, lecturerId) {
     const submission = await prisma.submission.findUnique({
-      where: { id: parseInt(submissionId) },
+      where: { id: submissionId },
       include: {
-        assignment: {
+        activity: {
           include: { course: { include: { lecturer: true } } }
         }
       }
@@ -175,13 +278,13 @@ class SubmissionService {
       throw new ValidationException('Submission not found');
     }
 
-    if (submission.assignment.course.lecturer.user_id !== lecturerId) {
+    if (submission.activity.course.lecturerId !== lecturerId) {
       throw new ValidationException('Only course lecturer can delete submissions');
     }
 
     await prisma.submission.update({
-      where: { id: parseInt(submissionId) },
-      data: { deleted_at: new Date() }
+      where: { id: submissionId },
+      data: { status: 'DELETED' }
     });
 
     return { message: 'Submission deleted successfully' };

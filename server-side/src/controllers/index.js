@@ -4,12 +4,12 @@
  */
 
 module.exports = {
-  AuthController: require('./auth.controller'),
-  CourseController: require('./course.controller'),
-  ExamController: require('./exam.controller'),
-  SubmissionController: require('./submission.controller'),
-  GradingController: require('./grading.controller'),
-  CertificateController: require('./certificate.controller'),
-  EnrollmentController: require('./enrollment.controller'),
-  AuditController: require('./audit.controller'),
+  authController: require('./auth.controller'),
+  courseController: require('./course.controller'),
+  examController: require('./exam.controller'),
+  submissionController: require('./submission.controller'),
+  gradingController: require('./grading.controller'),
+  certificateController: require('./certificate.controller'),
+  enrollmentController: require('./enrollment.controller'),
+  auditController: require('./audit.controller'),
 };

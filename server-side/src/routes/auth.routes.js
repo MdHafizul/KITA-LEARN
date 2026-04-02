@@ -3,7 +3,6 @@ const { authController } = require('../controllers');
 const { validateBody } = require('../middleware/validation.middleware');
 const { authMiddleware } = require('../middleware/auth.middleware');
 const { LoginDTO, RegisterDTO } = require('../models/dtos');
-
 const authRoutes = express.Router();
 
 /**

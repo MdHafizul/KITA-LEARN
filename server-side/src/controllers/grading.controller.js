@@ -10,7 +10,7 @@ class GradingController {
    * Get grades for a course
    * GET /api/v1/grades?courseId=...&page=1&limit=50
    */
-  static async getCourseGrades(req, res, next) {
+  async getCourseGrades(req, res, next) {
     try {
       const { courseId, page = 1, limit = 50 } = req.query;
       const userId = req.user.id;
@@ -36,7 +36,7 @@ class GradingController {
    * Get student GPA for a course
    * GET /api/v1/grades/:studentId/course/:courseId/gpa
    */
-  static async getStudentGPA(req, res, next) {
+  async getStudentGPA(req, res, next) {
     try {
       const { studentId, courseId } = req.params;
 
@@ -60,10 +60,30 @@ class GradingController {
   }
 
   /**
+   * Get student grades for a specific course
+   * GET /api/v1/grading/courses/:courseId/students/:studentId
+   */
+  async getStudentGrades(req, res, next) {
+    try {
+      const { courseId, studentId } = req.params;
+      const userId = req.user.id;
+
+      const grades = await GradingService.getStudentGrades(studentId, courseId, userId);
+
+      res.status(statusCodes.OK).json({
+        success: true,
+        data: { grades },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get grade statistics for a course
    * GET /api/v1/grades/:courseId/statistics
    */
-  static async getGradeStatistics(req, res, next) {
+  async getCourseGradeStats(req, res, next) {
     try {
       const { courseId } = req.params;
       const userId = req.user.id;
@@ -91,7 +111,7 @@ class GradingController {
    * Export grades to CSV
    * GET /api/v1/grades/:courseId/export
    */
-  static async exportGrades(req, res, next) {
+  async exportGrades(req, res, next) {
     try {
       const { courseId } = req.params;
       const userId = req.user.id;
@@ -115,4 +135,6 @@ class GradingController {
   }
 }
 
-module.exports = GradingController;
+module.exports = new GradingController();
+
+

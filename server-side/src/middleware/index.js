@@ -1,6 +1,7 @@
 module.exports = {
   ...require('./auth.middleware'),
   ...require('./validation.middleware'),
-  ...require('./error.middleware'),
+  errorHandler: require('./error.middleware').errorMiddleware,
+  notFoundHandler: require('./error.middleware').notFoundMiddleware,
   corsMiddleware: require('./cors.middleware')
 };

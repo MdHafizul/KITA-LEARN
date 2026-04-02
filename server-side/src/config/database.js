@@ -15,7 +15,7 @@ let prisma = null;
 const getPrismaClient = () => {
   if (!prisma) {
     prisma = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' 
+      log: process.env.NODE_ENV === 'development'
         ? ['query', 'error', 'warn']
         : ['error']
     });
@@ -41,14 +41,14 @@ const checkDatabaseConnection = async () => {
   try {
     const client = getPrismaClient();
     await client.$queryRaw`SELECT 1`;
-    return { 
-      success: true, 
-      message: 'Database connected successfully' 
+    return {
+      success: true,
+      message: 'Database connected successfully'
     };
   } catch (error) {
-    return { 
-      success: false, 
-      message: `Database connection failed: ${error.message}` 
+    return {
+      success: false,
+      message: `Database connection failed: ${error.message}`
     };
   }
 };

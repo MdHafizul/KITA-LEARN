@@ -12,7 +12,7 @@ class CourseController {
    * Get all courses with pagination and filters
    * GET /api/v1/courses?page=1&limit=10&search=JavaScript&status=published
    */
-  static async getAllCourses(req, res, next) {
+  async listCourses(req, res, next) {
     try {
       const { page = 1, limit = 10, search, status } = req.query;
       const userId = req.user?.id;
@@ -49,13 +49,13 @@ class CourseController {
    * Get single course with all content
    * GET /api/v1/courses/:courseId
    */
-  static async getCourseById(req, res, next) {
+  async getCourse(req, res, next) {
     try {
-      const { courseId } = req.params;
+      const { id: courseId } = req.params;
       const userId = req.user?.id;
 
       // Call service
-      const course = await CourseService.getCourseById(courseId, userId);
+      const course = await CourseService.getCourseById(courseId);
 
       if (!course) {
         return res.status(statusCodes.NOT_FOUND).json({
@@ -77,38 +77,21 @@ class CourseController {
   /**
    * Create new course (Lecturer/Admin only)
    * POST /api/v1/courses
-   * Body: { title, description, code, credits, category }
+   * Body: { title, description, creditHours, maxStudents, difficultyLevel, startDate, endDate }
    */
-  static async createCourse(req, res, next) {
+  async createCourse(req, res, next) {
     try {
       // Validate request
       const validated = CourseCreateDTO.parse(req.body);
       const userId = req.user.id;
 
-      // Check if user is lecturer
-      const isLecturer = req.user.role === 'lecturer' || req.user.role === 'admin';
-      if (!isLecturer) {
-        return res.status(statusCodes.FORBIDDEN).json({
-          success: false,
-          error: 'Only lecturers can create courses',
-          code: 'INSUFFICIENT_PERMISSION',
-        });
-      }
-
-      // Call service
-      const result = await CourseService.createCourse(validated, userId);
-
-      if (!result.success) {
-        return res.status(statusCodes.CONFLICT).json({
-          success: false,
-          error: result.error,
-          code: 'COURSE_CREATION_FAILED',
-        });
-      }
+      // Route middleware already verified user is LECTURER or ADMIN via requireRole
+      // Pass the normalized role from request directly to service
+      const result = await CourseService.createCourse(validated, userId, req.user.role);
 
       res.status(statusCodes.CREATED).json({
         success: true,
-        data: { course: result.course },
+        data: { course: result },
         message: 'Course created successfully',
       });
     } catch (error) {
@@ -121,28 +104,20 @@ class CourseController {
    * PUT /api/v1/courses/:courseId
    * Body: { title, description, category, status }
    */
-  static async updateCourse(req, res, next) {
+  async updateCourse(req, res, next) {
     try {
       // Validate request
       const validated = CourseUpdateDTO.parse(req.body);
-      const { courseId } = req.params;
+      const { id: courseId } = req.params;
       const userId = req.user.id;
+      const userRole = req.user.role;
 
       // Call service (handles authorization)
-      const result = await CourseService.updateCourse(courseId, validated, userId);
-
-      if (!result.success) {
-        const statusCode = result.code === 'NOT_FOUND' ? statusCodes.NOT_FOUND : statusCodes.FORBIDDEN;
-        return res.status(statusCode).json({
-          success: false,
-          error: result.error,
-          code: result.code,
-        });
-      }
+      const course = await CourseService.updateCourse(courseId, validated, userId, userRole);
 
       res.status(statusCodes.OK).json({
         success: true,
-        data: { course: result.course },
+        data: { course },
         message: 'Course updated successfully',
       });
     } catch (error) {
@@ -154,25 +129,18 @@ class CourseController {
    * Publish course (make visible to students)
    * PATCH /api/v1/courses/:courseId/publish
    */
-  static async publishCourse(req, res, next) {
+  async publishCourse(req, res, next) {
     try {
-      const { courseId } = req.params;
+      const { id: courseId } = req.params;
       const userId = req.user.id;
+      const userRole = req.user.role;
 
       // Call service
-      const result = await CourseService.publishCourse(courseId, userId);
-
-      if (!result.success) {
-        return res.status(statusCodes.FORBIDDEN).json({
-          success: false,
-          error: result.error,
-          code: 'PUBLISH_FAILED',
-        });
-      }
+      const course = await CourseService.publishCourse(courseId, userId, userRole);
 
       res.status(statusCodes.OK).json({
         success: true,
-        data: { course: result.course },
+        data: { course },
         message: 'Course published',
       });
     } catch (error) {
@@ -184,25 +152,18 @@ class CourseController {
    * Archive course
    * PATCH /api/v1/courses/:courseId/archive
    */
-  static async archiveCourse(req, res, next) {
+  async archiveCourse(req, res, next) {
     try {
-      const { courseId } = req.params;
+      const { id: courseId } = req.params;
       const userId = req.user.id;
+      const userRole = req.user.role;
 
       // Call service
-      const result = await CourseService.archiveCourse(courseId, userId);
-
-      if (!result.success) {
-        return res.status(statusCodes.FORBIDDEN).json({
-          success: false,
-          error: result.error,
-          code: 'ARCHIVE_FAILED',
-        });
-      }
+      const course = await CourseService.archiveCourse(courseId, userId, userRole);
 
       res.status(statusCodes.OK).json({
         success: true,
-        data: { course: result.course },
+        data: { course },
         message: 'Course archived',
       });
     } catch (error) {
@@ -214,13 +175,14 @@ class CourseController {
    * Delete course (Admin only)
    * DELETE /api/v1/courses/:courseId
    */
-  static async deleteCourse(req, res, next) {
+  async deleteCourse(req, res, next) {
     try {
-      const { courseId } = req.params;
+      const { id: courseId } = req.params;
       const userId = req.user.id;
+      const userRole = req.user.role;
 
-      // Only admin can delete
-      if (req.user.role !== 'admin') {
+      // Verify user is ADMIN (case-insensitive)
+      if (req.user.role !== 'ADMIN') {
         return res.status(statusCodes.FORBIDDEN).json({
           success: false,
           error: 'Only admins can delete courses',
@@ -229,15 +191,7 @@ class CourseController {
       }
 
       // Call service
-      const result = await CourseService.deleteCourse(courseId);
-
-      if (!result.success) {
-        return res.status(statusCodes.NOT_FOUND).json({
-          success: false,
-          error: 'Course not found',
-          code: 'COURSE_NOT_FOUND',
-        });
-      }
+      await CourseService.deleteCourse(courseId, userId, userRole);
 
       res.status(statusCodes.OK).json({
         success: true,
@@ -252,7 +206,7 @@ class CourseController {
    * Get course statistics (enrollment, completion, avg grade)
    * GET /api/v1/courses/:courseId/stats
    */
-  static async getCourseStats(req, res, next) {
+  async getCourseStats(req, res, next) {
     try {
       const { courseId } = req.params;
       const userId = req.user.id;
@@ -281,7 +235,7 @@ class CourseController {
    * Get enrolled students for a course
    * GET /api/v1/courses/:courseId/students
    */
-  static async getCourseStudents(req, res, next) {
+  async getCourseStudents(req, res, next) {
     try {
       const { courseId } = req.params;
       const { page = 1, limit = 20 } = req.query;
@@ -318,4 +272,6 @@ class CourseController {
   }
 }
 
-module.exports = CourseController;
+module.exports = new CourseController();
+
+

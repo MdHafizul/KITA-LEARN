@@ -10,7 +10,7 @@ class EnrollmentController {
    * Get student enrollments
    * GET /api/v1/enrollments?studentId=...&page=1&limit=10
    */
-  static async getStudentEnrollments(req, res, next) {
+  async getStudentEnrollments(req, res, next) {
     try {
       const { studentId, page = 1, limit = 10 } = req.query;
       const userId = req.user.id;
@@ -36,7 +36,7 @@ class EnrollmentController {
    * Get course enrollments (Lecturer view)
    * GET /api/v1/enrollments/course/:courseId
    */
-  static async getCourseEnrollments(req, res, next) {
+  async getCourseEnrollments(req, res, next) {
     try {
       const { courseId } = req.params;
       const { page = 1, limit = 50 } = req.query;
@@ -73,7 +73,7 @@ class EnrollmentController {
    * POST /api/v1/enrollments
    * Body: { courseId, studentId } (studentId optional, defaults to current user)
    */
-  static async enrollStudent(req, res, next) {
+  async enrollStudent(req, res, next) {
     try {
       const { courseId, studentId } = req.body;
       const userId = req.user.id;
@@ -95,8 +95,8 @@ class EnrollmentController {
         const code = result.code;
         const status =
           code === 'ALREADY_ENROLLED' ? statusCodes.CONFLICT :
-          code === 'COURSE_NOT_FOUND' ? statusCodes.NOT_FOUND :
-          statusCodes.UNPROCESSABLE_ENTITY;
+            code === 'COURSE_NOT_FOUND' ? statusCodes.NOT_FOUND :
+              statusCodes.UNPROCESSABLE_ENTITY;
 
         return res.status(status).json({
           success: false,
@@ -119,7 +119,7 @@ class EnrollmentController {
    * Get enrollment progress
    * GET /api/v1/enrollments/:enrollmentId/progress
    */
-  static async getEnrollmentProgress(req, res, next) {
+  async getEnrollmentProgress(req, res, next) {
     try {
       const { enrollmentId } = req.params;
 
@@ -146,7 +146,7 @@ class EnrollmentController {
    * Unenroll student from course (Student/Admin)
    * DELETE /api/v1/enrollments/:enrollmentId
    */
-  static async unenrollStudent(req, res, next) {
+  async unenrollStudent(req, res, next) {
     try {
       const { enrollmentId } = req.params;
       const userId = req.user.id;
@@ -169,6 +169,36 @@ class EnrollmentController {
       next(error);
     }
   }
+
+  /**
+   * Mark enrollment as complete
+   * POST /api/v1/enrollments/:enrollmentId/complete
+   */
+  async completeEnrollment(req, res, next) {
+    try {
+      const { enrollmentId } = req.params;
+      const userId = req.user.id;
+
+      const result = await EnrollmentService.completeEnrollment(enrollmentId, userId);
+
+      if (!result.success) {
+        return res.status(statusCodes.FORBIDDEN).json({
+          success: false,
+          error: result.error,
+          code: 'INSUFFICIENT_PERMISSION',
+        });
+      }
+
+      res.status(statusCodes.OK).json({
+        success: true,
+        message: 'Enrollment marked as complete',
+        data: result.data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
-module.exports = EnrollmentController;
+module.exports = new EnrollmentController();
+

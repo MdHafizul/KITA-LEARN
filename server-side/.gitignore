@@ -5,6 +5,7 @@
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 
 # Dependencies
 node_modules/
@@ -70,6 +71,10 @@ Thumbs.db
 # Project Specific
 setup-postgres.ps1
 instruction.md
+SEEDING_GUIDE.md
+USER_PERMISSIONS.md
+TESTING.md
+DEPLOYMENT.md
 .vscode-settings.json
 debug.log
 

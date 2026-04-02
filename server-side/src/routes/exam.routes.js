@@ -80,4 +80,49 @@ examRoutes.get(
   examController.getUserAttempts
 );
 
+/**
+ * GET /api/v1/exams
+ * Get all exams for a course (paginated)
+ * Query: courseId, page, limit
+ */
+examRoutes.get(
+  '/',
+  examController.getAllExams
+);
+
+/**
+ * POST /api/v1/exams/:id/publish
+ * Publish exam from DRAFT to PUBLISHED (Lecturer only)
+ */
+examRoutes.post(
+  '/:id/publish',
+  authMiddleware,
+  requireRole(['LECTURER', 'ADMIN']),
+  validateParams(ExamIdDTO),
+  examController.publishExam
+);
+
+/**
+ * DELETE /api/v1/exams/:id
+ * Delete exam (soft delete - Lecturer only)
+ */
+examRoutes.delete(
+  '/:id',
+  authMiddleware,
+  requireRole(['LECTURER', 'ADMIN']),
+  validateParams(ExamIdDTO),
+  examController.deleteExam
+);
+
+/**
+ * GET /api/v1/exams/:id/stats
+ * Get exam statistics (completion rate, pass rate, average score, etc.)
+ */
+examRoutes.get(
+  '/:id/stats',
+  authMiddleware,
+  validateParams(ExamIdDTO),
+  examController.getExamStats
+);
+
 module.exports = examRoutes;

@@ -1,211 +1,170 @@
 const { PrismaClient } = require('@prisma/client');
-const { auditRepository } = require('../repositories');
+const { auditLog: auditRepository } = require('../repositories');
 
 const prisma = new PrismaClient();
 
 class AuditService {
   /**
-   * Log an audit event
+   * Get all audit logs (Admin only)
    */
-  async log(userId, action, description, model_type, model_id, ipAddress = '0.0.0.0', userAgent = 'api') {
-    const auditLog = await prisma.auditLog.create({
-      data: {
-        user_id: userId,
-        action,
-        description,
-        model_type,
-        model_id,
-        ip_address: ipAddress,
-        user_agent: userAgent,
-        timestamp: new Date()
-      }
-    });
-
-    return auditLog;
-  }
-
-  /**
-   * Get audit logs for user
-   */
-  async getUserAuditLog(userId, page = 1, limit = 50) {
-    const skip = (page - 1) * limit;
-
-    const logs = await prisma.auditLog.findMany({
-      where: { user_id: userId },
-      orderBy: { timestamp: 'desc' },
-      skip,
-      take: limit
-    });
-
-    const total = await prisma.auditLog.count({
-      where: { user_id: userId }
-    });
-
-    return {
-      data: logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    };
-  }
-
-  /**
-   * Get audit logs for model
-   */
-  async getModelAuditLog(modelType, modelId, page = 1, limit = 50) {
-    const skip = (page - 1) * limit;
-
-    const logs = await prisma.auditLog.findMany({
-      where: {
-        model_type: modelType,
-        model_id: modelId
-      },
-      orderBy: { timestamp: 'desc' },
-      skip,
-      take: limit
-    });
-
-    const total = await prisma.auditLog.count({
-      where: {
-        model_type: modelType,
-        model_id: modelId
-      }
-    });
-
-    return {
-      data: logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    };
-  }
-
-  /**
-   * Get all audit logs
-   */
-  async getAllAuditLogs(page = 1, limit = 50, filters = {}) {
+  async getAuditLogs({ page = 1, limit = 50, action, userId } = {}) {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (filters.user_id) where.user_id = filters.user_id;
-    if (filters.action) where.action = filters.action;
-    if (filters.model_type) where.model_type = filters.model_type;
-    if (filters.start_date || filters.end_date) {
-      where.timestamp = {};
-      if (filters.start_date) where.timestamp.gte = new Date(filters.start_date);
-      if (filters.end_date) where.timestamp.lte = new Date(filters.end_date);
-    }
+    if (userId) where.userId = userId;
+    if (action) where.action = action;
 
     const logs = await prisma.auditLog.findMany({
       where,
-      orderBy: { timestamp: 'desc' },
+      orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
-      include: { user: true }
+      include: { user: { select: { id: true, email: true, fullName: true } } }
     });
 
     const total = await prisma.auditLog.count({ where });
 
     return {
-      data: logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      logs,
+      page,
+      limit,
+      total
     };
   }
 
   /**
-   * Export audit log to CSV
+   * Get activity logs for a specific user
    */
-  async exportAuditLog(filters = {}) {
+  async getUserActivityLogs(userId, { page = 1, limit = 50 } = {}) {
+    const skip = (page - 1) * limit;
+
+    const logs = await prisma.auditLog.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+      include: { user: { select: { id: true, email: true, fullName: true } } }
+    });
+
+    const total = await prisma.auditLog.count({
+      where: { userId }
+    });
+
+    return {
+      logs,
+      page,
+      limit,
+      total
+    };
+  }
+
+  /**
+   * Get course change history (audit logs for a course)
+   */
+  async getCourseChangeHistory(courseId, userId, { page = 1, limit = 50 } = {}) {
+    try {
+      // Verify user has access
+      const course = await prisma.course.findUnique({
+        where: { id: courseId },
+        include: { lecturer: true }
+      });
+
+      if (!course) {
+        return {
+          success: false,
+          error: 'Course not found'
+        };
+      }
+
+      // Only lecturer or admin can view course change history
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (currentUser.role !== 'ADMIN' && course.lecturerId !== userId) {
+        return {
+          success: false,
+          error: 'Access denied'
+        };
+      }
+
+      const skip = (page - 1) * limit;
+
+      const logs = await prisma.auditLog.findMany({
+        where: {
+          entity: 'Course',
+          entityId: courseId
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: { user: { select: { id: true, email: true, fullName: true } } }
+      });
+
+      const total = await prisma.auditLog.count({
+        where: {
+          entity: 'Course',
+          entityId: courseId
+        }
+      });
+
+      return {
+        success: true,
+        logs,
+        page,
+        limit,
+        total
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Export audit logs to CSV
+   */
+  async exportAuditLogs({ action, startDate, endDate } = {}) {
     const where = {};
 
-    if (filters.user_id) where.user_id = filters.user_id;
-    if (filters.action) where.action = filters.action;
-    if (filters.model_type) where.model_type = filters.model_type;
-    if (filters.start_date || filters.end_date) {
-      where.timestamp = {};
-      if (filters.start_date) where.timestamp.gte = new Date(filters.start_date);
-      if (filters.end_date) where.timestamp.lte = new Date(filters.end_date);
+    if (action) where.action = action;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
     }
 
     const logs = await prisma.auditLog.findMany({
       where,
-      orderBy: { timestamp: 'desc' },
-      include: { user: true }
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, email: true, fullName: true } } }
     });
 
-    return logs.map(log => ({
-      timestamp: log.timestamp.toISOString(),
-      user_id: log.user_id,
-      user_email: log.user?.email,
-      action: log.action,
-      description: log.description,
-      model_type: log.model_type,
-      model_id: log.model_id,
-      ip_address: log.ip_address,
-      user_agent: log.user_agent
-    }));
-  }
+    if (logs.length === 0) {
+      return null;
+    }
 
-  /**
-   * Track sensitive action
-   */
-  async trackSensitiveAction(userId, action, target, details) {
-    return this.log(
-      userId,
-      action,
-      `${action}: ${target} - ${JSON.stringify(details)}`,
-      'action',
-      userId
-    );
-  }
+    // Convert to CSV format
+    const headers = ['Timestamp', 'User ID', 'User Email', 'Action', 'Changes', 'Entity', 'Entity ID', 'IP Address'];
+    const rows = logs.map(log => [
+      log.createdAt.toISOString(),
+      log.userId,
+      log.user?.email || 'N/A',
+      log.action,
+      log.changes || 'N/A',
+      log.entity || 'N/A',
+      log.entityId || 'N/A',
+      log.ipAddress || 'N/A'
+    ]);
 
-  /**
-   * Get recent activity (last N logs)
-   */
-  async getRecentActivity(limit = 20) {
-    const logs = await prisma.auditLog.findMany({
-      orderBy: { timestamp: 'desc' },
-      take: limit,
-      include: { user: true }
-    });
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
 
-    return logs;
-  }
-
-  /**
-   * Get activity summary by action
-   */
-  async getActivitySummary(days = 30) {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const summary = await prisma.auditLog.groupBy({
-      by: ['action'],
-      where: {
-        timestamp: {
-          gte: startDate
-        }
-      },
-      _count: true,
-      orderBy: {
-        _count: {
-          action: 'desc'
-        }
-      }
-    });
-
-    return summary;
+    return csvContent;
   }
 }
 

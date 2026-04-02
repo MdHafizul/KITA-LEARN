@@ -32,12 +32,12 @@ const server = app.listen(PORT, HOST, () => {
  */
 const shutdown = async () => {
   logger.info('🛑 Shutting down gracefully...');
-  
+
   // Shutdown job queues first
   if (app.jobs) {
     await app.jobs.shutdownQueues();
   }
-  
+
   server.close(() => {
     logger.info('✅ Server closed');
     process.exit(0);

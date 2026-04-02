@@ -23,28 +23,33 @@ class AuthService {
     // Hash password using utility
     const hashedPassword = await hashPassword(password);
 
-    // Get role ID
+    // Get role ID using 'name' field (not 'slug')
     const roleRecord = await prisma.role.findUnique({
-      where: { slug: role || 'student' }
+      where: { name: role || 'student' }
     });
 
     if (!roleRecord) {
       throw new ValidationException('Invalid role');
     }
 
-    // Create user
+    // Create user with correct field names (camelCase)
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        full_name,
-        phone_number,
-        status: 'active'
+        fullName: full_name,  // ← Correct field name
+        phoneNumber: phone_number,  // ← Correct field name
+        isActive: true  // ← Correct field (boolean, not status)
       }
     });
 
-    // Assign role
-    await prisma.$executeRaw`INSERT INTO model_has_roles (role_id, model_id, model_type) VALUES (${roleRecord.id}, ${user.id}, 'User')`;
+    // Assign role using proper UserRole relation
+    await prisma.userRole.create({
+      data: {
+        userId: user.id,
+        roleId: roleRecord.id
+      }
+    });
 
     // Generate tokens
     const access_token = generateAccessToken({ userId: user.id, email: user.email });
@@ -55,7 +60,7 @@ class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        full_name: user.full_name,
+        fullName: user.fullName,
         role: role || 'student'
       },
       access_token,
@@ -72,7 +77,9 @@ class AuthService {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        roles: true
+        roles: {
+          include: { role: true }
+        }
       }
     });
 
@@ -85,12 +92,18 @@ class AuthService {
       throw new AuthException('Invalid credentials');
     }
 
-    if (user.status === 'inactive') {
+    if (!user.isActive) {  // ← Changed from user.status
       throw new AuthException('Account is inactive');
     }
 
     // Get user role
-    const userRole = user.roles[0]?.slug || 'student';
+    const userRole = user.roles[0]?.role?.name || 'student';
+
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    });
 
     const access_token = generateAccessToken({ userId: user.id, email: user.email, role: userRole });
     const refresh_token = generateRefreshToken({ userId: user.id });
@@ -100,7 +113,7 @@ class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        full_name: user.full_name,
+        fullName: user.fullName,  // ← Changed from full_name
         role: userRole
       },
       access_token,
@@ -119,14 +132,18 @@ class AuthService {
 
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        include: { roles: true }
+        include: {
+          roles: {
+            include: { role: true }
+          }
+        }
       });
 
-      if (!user || user.status === 'inactive') {
+      if (!user || !user.isActive) {  // ← Changed from user.status
         throw new AuthException('User not found or inactive');
       }
 
-      const userRole = user.roles[0]?.slug || 'student';
+      const userRole = user.roles[0]?.role?.name || 'student';
       const newAccessToken = generateAccessToken({ userId: user.id, email: user.email, role: userRole });
 
       return {
@@ -148,7 +165,7 @@ class AuthService {
       where: { id: userId },
       include: {
         roles: {
-          include: { permissions: true }
+          include: { role: true }
         }
       }
     });
@@ -162,11 +179,11 @@ class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        full_name: user.full_name,
-        phone_number: user.phone_number,
-        status: user.status,
-        roles: user.roles,
-        created_at: user.created_at
+        fullName: user.fullName,  // ← Changed from full_name
+        phoneNumber: user.phoneNumber,  // ← Changed from phone_number
+        isActive: user.isActive,  // ← Changed from status
+        roles: user.roles.map(ur => ur.role.name),
+        createdAt: user.createdAt  // ← Changed from created_at
       }
     };
   }
@@ -196,9 +213,9 @@ class AuthService {
       data: { password: hashedNewPassword }
     });
 
-    return { 
+    return {
       success: true,
-      message: 'Password changed successfully' 
+      message: 'Password changed successfully'
     };
   }
 
@@ -212,9 +229,9 @@ class AuthService {
     const updated = await prisma.user.update({
       where: { id: userId },
       data: {
-        full_name,
-        phone_number,
-        updated_at: new Date()
+        fullName: full_name,  // ← Changed from full_name
+        phoneNumber: phone_number,  // ← Changed from phone_number
+        updatedAt: new Date()  // ← Changed from updated_at
       }
     });
 
@@ -223,8 +240,8 @@ class AuthService {
       user: {
         id: updated.id,
         email: updated.email,
-        full_name: updated.full_name,
-        phone_number: updated.phone_number
+        fullName: updated.fullName,  // ← Changed from full_name
+        phoneNumber: updated.phoneNumber  // ← Changed from phone_number
       }
     };
   }

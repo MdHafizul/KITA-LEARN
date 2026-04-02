@@ -7,10 +7,31 @@ const { CertificateService } = require('../services');
 
 class CertificateController {
   /**
+   * Generate certificate for student course completion
+   * POST /api/v1/certificates/generate
+   */
+  async generateCertificate(req, res, next) {
+    try {
+      const { enrollmentId } = req.body;
+      const userId = req.user.id;
+
+      const certificate = await CertificateService.generateCertificate(enrollmentId, userId);
+
+      res.status(statusCodes.CREATED).json({
+        success: true,
+        data: { certificate },
+        message: 'Certificate generated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get certificates for authenticated user
    * GET /api/v1/certificates
    */
-  static async getUserCertificates(req, res, next) {
+  async getStudentCertificates(req, res, next) {
     try {
       const userId = req.user.id;
       const { page = 1, limit = 10 } = req.query;
@@ -36,7 +57,7 @@ class CertificateController {
    * Get single certificate by ID
    * GET /api/v1/certificates/:certificateId
    */
-  static async getCertificate(req, res, next) {
+  async getCertificate(req, res, next) {
     try {
       const { certificateId } = req.params;
 
@@ -63,7 +84,7 @@ class CertificateController {
    * Verify certificate authenticity
    * GET /api/v1/certificates/:certificateId/verify
    */
-  static async verifyCertificate(req, res, next) {
+  async verifyCertificate(req, res, next) {
     try {
       const { certificateId } = req.params;
 
@@ -86,7 +107,7 @@ class CertificateController {
    * Download certificate as PDF
    * GET /api/v1/certificates/:certificateId/download
    */
-  static async downloadCertificate(req, res, next) {
+  async downloadCertificatePDF(req, res, next) {
     try {
       const { certificateId } = req.params;
 
@@ -113,7 +134,7 @@ class CertificateController {
    * PATCH /api/v1/certificates/:certificateId/revoke
    * Body: { reason }
    */
-  static async revokeCertificate(req, res, next) {
+  async revokeCertificate(req, res, next) {
     try {
       const { certificateId } = req.params;
       const { reason } = req.body;
@@ -147,4 +168,6 @@ class CertificateController {
   }
 }
 
-module.exports = CertificateController;
+module.exports = new CertificateController();
+
+

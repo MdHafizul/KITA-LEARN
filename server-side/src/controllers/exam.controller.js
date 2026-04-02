@@ -12,7 +12,7 @@ class ExamController {
    * Get all exams for a course
    * GET /api/v1/exams?courseId=...&page=1&limit=10
    */
-  static async getAllExams(req, res, next) {
+  async getAllExams(req, res, next) {
     try {
       const { courseId, page = 1, limit = 10 } = req.query;
       const userId = req.user?.id;
@@ -47,9 +47,9 @@ class ExamController {
    * Get single exam with questions
    * GET /api/v1/exams/:examId
    */
-  static async getExamById(req, res, next) {
+  async getExam(req, res, next) {
     try {
-      const { examId } = req.params;
+      const { id: examId } = req.params;
 
       // Call service
       const exam = await ExamService.getExamById(examId);
@@ -76,7 +76,7 @@ class ExamController {
    * POST /api/v1/exams
    * Body: { courseId, title, description, totalQuestions, passingScore, duration }
    */
-  static async createExam(req, res, next) {
+  async createExam(req, res, next) {
     try {
       // Validate request
       const validated = ExamCreateDTO.parse(req.body);
@@ -116,9 +116,9 @@ class ExamController {
    * Start exam attempt
    * POST /api/v1/exams/:examId/start
    */
-  static async startExam(req, res, next) {
+  async startExam(req, res, next) {
     try {
-      const { examId } = req.params;
+      const { id: examId } = req.params;
       const userId = req.user.id;
 
       // Call service
@@ -128,9 +128,9 @@ class ExamController {
         const code = result.code;
         const statusCode =
           code === 'EXAM_NOT_FOUND' ? statusCodes.NOT_FOUND :
-          code === 'NOT_ENROLLED' ? statusCodes.FORBIDDEN :
-          code === 'NO_ATTEMPTS_LEFT' ? statusCodes.CONFLICT :
-          statusCodes.UNPROCESSABLE_ENTITY;
+            code === 'NOT_ENROLLED' ? statusCodes.FORBIDDEN :
+              code === 'NO_ATTEMPTS_LEFT' ? statusCodes.CONFLICT :
+                statusCodes.UNPROCESSABLE_ENTITY;
 
         return res.status(statusCode).json({
           success: false,
@@ -157,11 +157,11 @@ class ExamController {
    * POST /api/v1/exams/:examId/submit
    * Body: { attemptId, answers: [ { questionId, selectedOptionId } ] }
    */
-  static async submitExam(req, res, next) {
+  async submitExam(req, res, next) {
     try {
       // Validate request
       const { attemptId, answers } = req.body;
-      const { examId } = req.params;
+      const { id: examId } = req.params;
       const userId = req.user.id;
 
       if (!attemptId || !answers || !Array.isArray(answers)) {
@@ -201,9 +201,9 @@ class ExamController {
    * Get exam attempts for a user
    * GET /api/v1/exams/:examId/attempts
    */
-  static async getExamAttempts(req, res, next) {
+  async getUserAttempts(req, res, next) {
     try {
-      const { examId } = req.params;
+      const { id: examId } = req.params;
       const userId = req.user.id;
 
       // Call service
@@ -222,9 +222,9 @@ class ExamController {
    * Get exam results
    * GET /api/v1/exams/:examId/results
    */
-  static async getExamResults(req, res, next) {
+  async getExamResults(req, res, next) {
     try {
-      const { examId } = req.params;
+      const { id: examId } = req.params;
       const userId = req.user.id;
 
       // Call service
@@ -246,6 +246,79 @@ class ExamController {
       next(error);
     }
   }
+
+  /**
+   * Publish exam (Lecturer only)
+   * POST /api/v1/exams/:id/publish
+   */
+  async publishExam(req, res, next) {
+    try {
+      const { id: examId } = req.params;
+      const userId = req.user.id;
+
+      // Call service
+      const result = await ExamService.publishExam(examId, userId);
+
+      res.status(statusCodes.OK).json({
+        success: true,
+        data: { exam: result },
+        message: 'Exam published successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Delete exam (Lecturer only - soft delete)
+   * DELETE /api/v1/exams/:id
+   */
+  async deleteExam(req, res, next) {
+    try {
+      const { id: examId } = req.params;
+      const userId = req.user.id;
+
+      // Call service
+      const result = await ExamService.deleteExam(examId, userId);
+
+      res.status(statusCodes.OK).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get exam statistics
+   * GET /api/v1/exams/:id/stats
+   */
+  async getExamStats(req, res, next) {
+    try {
+      const { id: examId } = req.params;
+
+      // Call service
+      const stats = await ExamService.getExamStats(examId);
+
+      if (!stats) {
+        return res.status(statusCodes.NOT_FOUND).json({
+          success: false,
+          error: 'No statistics available for this exam',
+          code: 'NO_STATS',
+        });
+      }
+
+      res.status(statusCodes.OK).json({
+        success: true,
+        data: { stats },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
-module.exports = ExamController;
+module.exports = new ExamController();
+
+

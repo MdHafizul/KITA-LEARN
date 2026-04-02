@@ -72,8 +72,8 @@ const errorMiddleware = (err, req, res, next) => {
   // Handle general errors
   res.status(statusCodes.INTERNAL_ERROR).json({
     success: false,
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
+    error: process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
       : err.message,
     code: 'INTERNAL_ERROR'
   });

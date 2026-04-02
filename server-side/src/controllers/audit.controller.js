@@ -10,7 +10,7 @@ class AuditController {
    * Get audit logs (Admin only)
    * GET /api/v1/audit?page=1&limit=50&action=...&userId=...
    */
-  static async getAuditLogs(req, res, next) {
+  async getAuditLogs(req, res, next) {
     try {
       const { page = 1, limit = 50, action, userId } = req.query;
 
@@ -47,7 +47,7 @@ class AuditController {
    * Get user activity logs
    * GET /api/v1/audit/user/:userId
    */
-  static async getUserActivityLogs(req, res, next) {
+  async getUserActivity(req, res, next) {
     try {
       const { userId } = req.params;
       const { page = 1, limit = 50 } = req.query;
@@ -87,7 +87,7 @@ class AuditController {
    * Get course activity logs
    * GET /api/v1/audit/course/:courseId
    */
-  static async getCourseActivityLogs(req, res, next) {
+  async getCourseChangeHistory(req, res, next) {
     try {
       const { courseId } = req.params;
       const { page = 1, limit = 50 } = req.query;
@@ -126,7 +126,7 @@ class AuditController {
    * Export audit logs to CSV (Admin only)
    * GET /api/v1/audit/export?action=...&startDate=...&endDate=...
    */
-  static async exportAuditLogs(req, res, next) {
+  async exportAuditLogs(req, res, next) {
     try {
       // Admin only
       if (req.user.role !== 'admin') {
@@ -154,4 +154,6 @@ class AuditController {
   }
 }
 
-module.exports = AuditController;
+module.exports = new AuditController();
+
+

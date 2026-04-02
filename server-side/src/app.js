@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const {
   authMiddleware,
-  cors: corsMiddleware,
+  corsMiddleware,
   errorHandler,
   notFoundHandler
 } = require('./middleware');
@@ -47,7 +47,6 @@ app.use(morgan('combined', {
 // ============================================
 
 const {
-  logger,
   getSystemHealth,
   getAppInfo,
   getDiagnostics,
@@ -161,14 +160,14 @@ app.get('/api/v1/health/queues', async (req, res) => {
   try {
     const queues = jobs.getQueues();
     const queueStatus = {};
-    
+
     for (const [name, queue] of Object.entries(queues)) {
       if (queue) {
         const counts = await queue.getJobCounts();
         queueStatus[name] = counts;
       }
     }
-    
+
     res.json({
       success: true,
       status: 'healthy',
@@ -195,7 +194,7 @@ app.get('/api/v1/health/queues', async (req, res) => {
 app.get('/api/v1/metrics', (req, res) => {
   const report = metricsCollector.getReport();
   const alerts = metricsCollector.getAlerts();
-  
+
   res.json({
     success: true,
     metrics: report,

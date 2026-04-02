@@ -21,17 +21,17 @@ const customFormat = winston.format.combine(
   winston.format.errors({ stack: true }),
   winston.format.printf(info => {
     const baseLog = `${info.timestamp} [${info.level.toUpperCase()}] ${info.message}`;
-    
+
     // Add context if available
     if (info.context) {
       return `${baseLog} | ${info.context}`;
     }
-    
+
     // Add stack trace if error
     if (info.stack) {
       return `${baseLog}\n${info.stack}`;
     }
-    
+
     // Add extra data if available
     if (Object.keys(info).length > 3) {
       const extra = JSON.stringify(
@@ -44,7 +44,7 @@ const customFormat = winston.format.combine(
       );
       return `${baseLog} | ${extra}`;
     }
-    
+
     return baseLog;
   })
 );
@@ -96,15 +96,15 @@ const logger = winston.createLogger({
     // Debug log file (development only)
     ...(!process.env.NODE_ENV || process.env.NODE_ENV === 'development'
       ? [
-          new DailyRotateFile({
-            filename: path.join(LOG_DIR, 'debug-%DATE%.log'),
-            datePattern: 'YYYY-MM-DD',
-            level: 'debug',
-            maxSize: '20m',
-            maxFiles: '7d',
-            format: customFormat
-          })
-        ]
+        new DailyRotateFile({
+          filename: path.join(LOG_DIR, 'debug-%DATE%.log'),
+          datePattern: 'YYYY-MM-DD',
+          level: 'debug',
+          maxSize: '20m',
+          maxFiles: '7d',
+          format: customFormat
+        })
+      ]
       : [])
   ]
 });
@@ -196,10 +196,10 @@ const logJobEvent = (jobName, status, duration = 0, data = {}) => {
  */
 const logMetrics = (metric, value, unit = '', threshold = null) => {
   const level = threshold && value > threshold ? 'warn' : 'debug';
-  const message = threshold && value > threshold 
+  const message = threshold && value > threshold
     ? `Performance Alert: ${metric} exceeded threshold`
     : `Metric ${metric}`;
-  
+
   logger.log(level, message, {
     metric,
     value,

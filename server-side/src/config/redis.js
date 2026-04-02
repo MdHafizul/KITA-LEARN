@@ -50,14 +50,14 @@ const checkRedisConnection = async () => {
   try {
     const client = getRedisClient();
     await client.ping();
-    return { 
-      success: true, 
-      message: 'Redis connected successfully' 
+    return {
+      success: true,
+      message: 'Redis connected successfully'
     };
   } catch (error) {
-    return { 
-      success: false, 
-      message: `Redis connection failed: ${error.message}` 
+    return {
+      success: false,
+      message: `Redis connection failed: ${error.message}`
     };
   }
 };

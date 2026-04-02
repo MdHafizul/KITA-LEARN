@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { ValidationException } = require('../exceptions');
-const { examRepository, gradeRepository } = require('../repositories');
+const { exam: examRepository, grade: gradeRepository } = require('../repositories');
 
 const prisma = new PrismaClient();
 
@@ -9,33 +9,33 @@ class ExamService {
    * Create a new exam
    */
   async createExam(data, lecturerId) {
-    const { course_id, title, description, total_questions, passing_score, time_limit, start_date, end_date, shuffle_questions } = data;
+    const { activityId, title, description, totalQuestions, passingScore, timeLimit, startDate, endDate, shuffleQuestions } = data;
 
-    const course = await prisma.course.findUnique({
-      where: { id: parseInt(course_id) },
-      include: { lecturer: true }
+    const activity = await prisma.learningActivity.findUnique({
+      where: { id: activityId },
+      include: { course: { include: { lecturer: true } } }
     });
 
-    if (!course) {
-      throw new ValidationException('Course not found');
+    if (!activity) {
+      throw new ValidationException('Activity not found');
     }
 
-    if (course.lecturer.user_id !== lecturerId) {
+    if (activity.course.lecturer.userId !== lecturerId) {
       throw new ValidationException('Only course lecturer can create exams');
     }
 
     const exam = await prisma.exam.create({
       data: {
-        course_id: parseInt(course_id),
+        activityId,
         title,
         description,
-        total_questions: parseInt(total_questions),
-        passing_score: parseInt(passing_score),
-        time_limit: parseInt(time_limit),
-        start_date: new Date(start_date),
-        end_date: new Date(end_date),
-        shuffle_questions: shuffle_questions === 'true' || shuffle_questions === true,
-        status: 'draft'
+        totalQuestions: parseInt(totalQuestions),
+        passingScore: parseInt(passingScore),
+        timeLimit: parseInt(timeLimit),
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        shuffleQuestions: shuffleQuestions === 'true' || shuffleQuestions === true,
+        status: 'DRAFT'
       }
     });
 
@@ -47,8 +47,8 @@ class ExamService {
    */
   async startExamAttempt(examId, studentId) {
     const exam = await prisma.exam.findUnique({
-      where: { id: parseInt(examId) },
-      include: { course: true }
+      where: { id: examId },
+      include: { activity: { include: { course: true } } }
     });
 
     if (!exam) {
@@ -58,8 +58,8 @@ class ExamService {
     // Check if student is enrolled
     const enrollment = await prisma.enrollment.findFirst({
       where: {
-        course_id: exam.course_id,
-        student_id: studentId,
+        courseId: exam.activity.courseId,
+        userId: studentId,
         status: 'active'
       }
     });
@@ -69,48 +69,52 @@ class ExamService {
     }
 
     // Check remaining attempts
-    const remainingAttempts = await examRepository.getRemainingAttempts(examId, studentId, exam.max_attempts || 3);
-    if (remainingAttempts <= 0) {
+    const attemptCount = await prisma.examAttempt.count({
+      where: { examId }
+    });
+
+    const maxAttempts = exam.totalAttempts || 3;
+    if (attemptCount >= maxAttempts) {
       throw new ValidationException('No attempts remaining for this exam');
     }
 
     // Check if exam is within date range
     const now = new Date();
-    if (now < new Date(exam.start_date) || now > new Date(exam.end_date)) {
+    if (now < new Date(exam.startDate) || now > new Date(exam.endDate)) {
       throw new ValidationException('Exam is not available at this time');
     }
 
     // Create attempt record
     const attempt = await prisma.examAttempt.create({
       data: {
-        exam_id: parseInt(examId),
-        student_id: studentId,
-        started_at: new Date(),
-        status: 'in_progress'
+        examId,
+        userId: studentId,
+        startedAt: new Date(),
+        status: 'IN_PROGRESS'
       }
     });
 
     // Fetch questions (optionally shuffle)
     const questions = await prisma.question.findMany({
-      where: { exam_id: parseInt(examId) },
+      where: { examId },
       include: { options: true }
     });
 
-    const shuffledQuestions = exam.shuffle_questions ? this.shuffleArray(questions) : questions;
+    const shuffledQuestions = exam.shuffleQuestions ? this.shuffleArray(questions) : questions;
 
     return {
-      attempt_id: attempt.id,
-      exam_id: exam.id,
+      attemptId: attempt.id,
+      examId: exam.id,
       title: exam.title,
-      time_limit: exam.time_limit,
-      total_questions: exam.total_questions,
+      timeLimit: exam.timeLimit,
+      totalQuestions: exam.totalQuestions,
       questions: shuffledQuestions.map(q => ({
         id: q.id,
-        question_text: q.question_text,
-        question_type: q.question_type,
+        questionText: q.questionText,
+        questionType: q.questionType,
         options: q.options.map(o => ({
           id: o.id,
-          option_text: o.option_text
+          optionText: o.optionText
         }))
       }))
     };
@@ -121,7 +125,7 @@ class ExamService {
    */
   async submitExamAnswers(attemptId, answers) {
     const attempt = await prisma.examAttempt.findUnique({
-      where: { id: parseInt(attemptId) },
+      where: { id: attemptId },
       include: { exam: true }
     });
 
@@ -129,7 +133,7 @@ class ExamService {
       throw new ValidationException('Exam attempt not found');
     }
 
-    if (attempt.status !== 'in_progress') {
+    if (attempt.status !== 'IN_PROGRESS') {
       throw new ValidationException('This exam attempt is already submitted');
     }
 
@@ -137,21 +141,21 @@ class ExamService {
     for (const answer of answers) {
       await prisma.examAnswer.create({
         data: {
-          attempt_id: parseInt(attemptId),
-          question_id: answer.question_id,
-          selected_option_id: answer.selected_option_id || null,
-          answer_text: answer.answer_text || null,
-          is_correct: false // Will be calculated in grading
+          attemptId,
+          questionId: answer.questionId,
+          selectedOptionId: answer.selectedOptionId || null,
+          answerText: answer.answerText || null,
+          isCorrect: false // Will be calculated in grading
         }
       });
     }
 
     // Mark attempt as submitted
     const updatedAttempt = await prisma.examAttempt.update({
-      where: { id: parseInt(attemptId) },
+      where: { id: attemptId },
       data: {
-        submitted_at: new Date(),
-        status: 'submitted'
+        submittedAt: new Date(),
+        status: 'SUBMITTED'
       }
     });
 
@@ -171,7 +175,7 @@ class ExamService {
       throw new ValidationException('Exam attempt not found');
     }
 
-    if (attempt.status !== 'submitted') {
+    if (attempt.status !== 'SUBMITTED') {
       throw new ValidationException('Exam must be submitted before grading');
     }
 
@@ -180,51 +184,51 @@ class ExamService {
     // Check each answer
     for (const answer of attempt.answers) {
       const question = await prisma.question.findUnique({
-        where: { id: answer.question_id },
+        where: { id: answer.questionId },
         include: { options: true }
       });
 
       // Find correct option
-      const correctOption = question.options.find(o => o.is_correct);
+      const correctOption = question.options.find(o => o.isCorrect);
 
-      if (answer.selected_option_id === correctOption.id) {
+      if (answer.selectedOptionId === correctOption.id) {
         correctAnswers++;
         await prisma.examAnswer.update({
           where: { id: answer.id },
-          data: { is_correct: true }
+          data: { isCorrect: true }
         });
       }
     }
 
     // Calculate score
-    const scorePercentage = (correctAnswers / attempt.exam.total_questions) * 100;
-    const isPassed = scorePercentage >= attempt.exam.passing_score;
+    const scorePercentage = (correctAnswers / attempt.exam.totalQuestions) * 100;
+    const isPassed = scorePercentage >= attempt.exam.passingScore;
 
     // Update attempt with grade
     const gradedAttempt = await prisma.examAttempt.update({
-      where: { id: parseInt(attemptId) },
+      where: { id: attemptId },
       data: {
-        status: 'graded',
+        status: 'GRADED',
         score: scorePercentage,
         passed: isPassed,
-        graded_at: new Date()
+        gradedAt: new Date()
       }
     });
 
     // Create or update grade record
     await gradeRepository.upsertGrade({
-      student_id: attempt.student_id,
-      exam_id: attempt.exam_id,
+      userId: attempt.userId,
+      examId: attempt.examId,
       score: scorePercentage,
       passed: isPassed
     });
 
     return {
-      attempt_id: gradedAttempt.id,
+      attemptId: gradedAttempt.id,
       score: gradedAttempt.score,
       passed: gradedAttempt.passed,
-      correct_answers: correctAnswers,
-      total_questions: attempt.exam.total_questions
+      correctAnswers: correctAnswers,
+      totalQuestions: attempt.exam.totalQuestions
     };
   }
 
@@ -257,25 +261,137 @@ class ExamService {
   }
 
   /**
+   * Get all exams for a course
+   */
+  async getAllExams(courseId, { page = 1, limit = 10 }, userId) {
+    const skip = (page - 1) * limit;
+
+    const exams = await prisma.exam.findMany({
+      where: { activity: { courseId } },
+      skip,
+      take: limit,
+      include: { activity: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const total = await prisma.exam.count({
+      where: { activity: { courseId } }
+    });
+
+    return {
+      exams,
+      page,
+      limit,
+      total
+    };
+  }
+
+  /**
+   * Get exam by ID with questions
+   */
+  async getExamById(examId) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        activity: true,
+        questions: {
+          include: { options: true }
+        }
+      }
+    });
+
+    return exam;
+  }
+
+  /**
+   * Start exam for student
+   */
+  async startExam(examId, userId) {
+    const attempt = await this.startExamAttempt(examId, userId);
+    const exam = await this.getExamById(examId);
+
+    return {
+      success: true,
+      attempt,
+      exam
+    };
+  }
+
+  /**
+   * Submit exam for student
+   */
+  async submitExam(examId, attemptId, answers, userId) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId }
+    });
+
+    if (!attempt || attempt.userId !== userId) {
+      return {
+        success: false,
+        error: 'Invalid attempt',
+        code: 'INVALID_ATTEMPT'
+      };
+    }
+
+    await this.submitExamAnswers(attemptId, answers);
+    const graded = await this.gradeExam(attemptId);
+
+    return {
+      success: true,
+      attempt: graded,
+      score: graded.score,
+      passed: graded.passed
+    };
+  }
+
+  /**
+   * Get exam attempts for user
+   */
+  async getExamAttempts(examId, userId) {
+    const attempts = await prisma.examAttempt.findMany({
+      where: {
+        examId,
+        userId
+      },
+      orderBy: { startedAt: 'desc' }
+    });
+
+    return attempts;
+  }
+
+  /**
+   * Get exam results
+   */
+  async getExamResults(examId, userId) {
+    const results = await prisma.examAttempt.findMany({
+      where: { examId, userId },
+      include: { answers: true },
+      orderBy: { gradedAt: 'desc' }
+    });
+
+    return results;
+  }
+
+  /**
    * Publish exam
    */
   async publishExam(examId, lecturerId) {
     const exam = await prisma.exam.findUnique({
-      where: { id: parseInt(examId) },
-      include: { course: true }
+      where: { id: examId },
+      include: { activity: { include: { course: { include: { lecturer: true } } } } }
     });
 
     if (!exam) {
       throw new ValidationException('Exam not found');
     }
 
-    if (exam.course.lecturer.user_id !== lecturerId) {
+    if (exam.activity.course.lecturer.userId !== lecturerId) {
       throw new ValidationException('Only course lecturer can publish exams');
     }
 
     const updated = await prisma.exam.update({
-      where: { id: parseInt(examId) },
-      data: { status: 'published' }
+      where: { id: examId },
+      data: { status: 'PUBLISHED' }
     });
 
     return updated;
@@ -286,15 +402,15 @@ class ExamService {
    */
   async deleteExam(examId, lecturerId) {
     const exam = await prisma.exam.findUnique({
-      where: { id: parseInt(examId) },
-      include: { course: true }
+      where: { id: examId },
+      include: { activity: { include: { course: { include: { lecturer: true } } } } }
     });
 
     if (!exam) {
       throw new ValidationException('Exam not found');
     }
 
-    if (exam.course.lecturer.user_id !== lecturerId) {
+    if (exam.activity.course.lecturer.userId !== lecturerId) {
       throw new ValidationException('Only course lecturer can delete exams');
     }
 

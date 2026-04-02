@@ -10,7 +10,7 @@ class SubmissionController {
    * Get all submissions for an assignment
    * GET /api/v1/submissions?assignmentId=...&page=1&limit=20
    */
-  static async getAllSubmissions(req, res, next) {
+  async getAssignmentSubmissions(req, res, next) {
     try {
       const { assignmentId, page = 1, limit = 20 } = req.query;
       const userId = req.user.id;
@@ -38,7 +38,7 @@ class SubmissionController {
    * POST /api/v1/submissions
    * Body: { assignmentId, content, attachmentUrl }
    */
-  static async submitAssignment(req, res, next) {
+  async submitAssignment(req, res, next) {
     try {
       const { assignmentId, content, attachmentUrl } = req.body;
       const userId = req.user.id;
@@ -80,7 +80,7 @@ class SubmissionController {
    * PATCH /api/v1/submissions/:submissionId/grade
    * Body: { score, feedback }
    */
-  static async gradeSubmission(req, res, next) {
+  async gradeSubmission(req, res, next) {
     try {
       const { submissionId } = req.params;
       const { score, feedback } = req.body;
@@ -122,7 +122,7 @@ class SubmissionController {
    * Get user's submissions
    * GET /api/v1/submissions/user/:userId
    */
-  static async getUserSubmissions(req, res, next) {
+  async getSubmission(req, res, next) {
     try {
       const { userId } = req.params;
       const { page = 1, limit = 20 } = req.query;
@@ -145,4 +145,6 @@ class SubmissionController {
   }
 }
 
-module.exports = SubmissionController;
+module.exports = new SubmissionController();
+
+
