@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Service layer contains business rules, orchestrates repositories, and throws domain-specific errors.
+ * Params: Accept explicit method arguments (ids, filters, payload objects) from controllers.
+ * Body: N/A at transport level; use validated payload objects received from controller layer.
+ * Auth Headers: N/A at service level; authorization is enforced at route/controller boundary before service calls.
+ */
+
+/**
  * Assessments Service
  * Business logic for exam operations
  */
@@ -10,8 +18,36 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class AssessmentsService {
+
+    /**
+     * Get all exams 
+     */
+    /**
+     * @desc: Service function executes domain business logic and repository orchestration.
+     * @param {Object} options - Pagination options
+     * @param {number} options.page - Page number (default: 1)
+     * @param {number} options.limit - Items per page (default: 10) 
+     * @body N/A at service layer; consume already validated payload objects.
+     * @returns {Object} - Paginated list of exams with total count
+     */
+
+
+    async getAllExams({ page = 1, limit = 10 }) {
+        const skip = (page - 1) * limit;
+        const exams = await assessmentsRepository.getAllExams({ skip, limit });
+
+        return { exams, page, limit };
+    }
+
+
     /**
      * Get exam by ID
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getExamById(id) {
         const exam = await assessmentsRepository.findExamById(id);
@@ -26,7 +62,23 @@ class AssessmentsService {
     /**
      * Create exam
      */
-    async createExam(data, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async createExam(data, userId, isAdmin = false) {
+        const lecturerProfile = await prisma.lecturerProfile.findUnique({
+            where: { userId }
+        });
+
+        if (!lecturerProfile && !isAdmin) {
+            throw new ValidationException('Lecturer profile not found');
+        }
+
+        const lecturerId = lecturerProfile?.id;
+
         const activity = await prisma.learningActivity.findUnique({
             where: { id: data.activityId },
             include: { course: { include: { lecturer: true } } }
@@ -36,11 +88,15 @@ class AssessmentsService {
             throw new ValidationException('Activity not found');
         }
 
-        if (activity.course.lecturer.id !== lecturerId) {
-            throw new ValidationException('Not authorized to create exam for this activity');
+        if (!isAdmin && activity.course.lecturer.id !== lecturerId) {
+            const error = new Error('Not authorized to create exam for this activity');
+            error.statusCode = 403;
+            throw error;
         }
 
         const examData = {
+            title: data.title,
+            description: data.description || null,
             activityId: data.activityId,
             totalQuestions: parseInt(data.totalQuestions),
             passingScore: parseInt(data.passingScore) || 50,
@@ -54,15 +110,23 @@ class AssessmentsService {
     /**
      * Update exam
      */
-    async updateExam(id, data, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async updateExam(id, data, lecturerId, isAdmin = false) {
         const exam = await assessmentsRepository.findExamById(id);
 
         if (!exam) {
             throw new ValidationException('Exam not found');
         }
 
-        if (exam.activity.course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to update this exam');
+        if (!isAdmin && exam.activity.course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to update this exam');
+            error.statusCode = 403;
+            throw error;
         }
 
         return assessmentsRepository.updateExam(id, data);
@@ -71,15 +135,23 @@ class AssessmentsService {
     /**
      * Delete exam (soft delete)
      */
-    async deleteExam(id, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async deleteExam(id, lecturerId, isAdmin = false) {
         const exam = await assessmentsRepository.findExamById(id);
 
         if (!exam) {
             throw new ValidationException('Exam not found');
         }
 
-        if (exam.activity.course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to delete this exam');
+        if (!isAdmin && exam.activity.course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to delete this exam');
+            error.statusCode = 403;
+            throw error;
         }
 
         return assessmentsRepository.deleteExam(id);
@@ -88,15 +160,23 @@ class AssessmentsService {
     /**
      * Create exam question
      */
-    async createQuestion(examId, data, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async createQuestion(examId, data, lecturerId, isAdmin = false) {
         const exam = await assessmentsRepository.findExamById(examId);
 
         if (!exam) {
             throw new ValidationException('Exam not found');
         }
 
-        if (exam.activity.course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to add questions to this exam');
+        if (!isAdmin && exam.activity.course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to add questions to this exam');
+            error.statusCode = 403;
+            throw error;
         }
 
         return assessmentsRepository.createQuestion({
@@ -114,6 +194,12 @@ class AssessmentsService {
     /**
      * Get exam questions
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getQuestions(examId) {
         const exam = await assessmentsRepository.findExamById(examId);
 
@@ -127,7 +213,13 @@ class AssessmentsService {
     /**
      * Update question
      */
-    async updateQuestion(id, data, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async updateQuestion(id, data, lecturerId, isAdmin = false) {
         const question = await assessmentsRepository.getQuestion(id);
 
         if (!question) {
@@ -135,8 +227,10 @@ class AssessmentsService {
         }
 
         const exam = await assessmentsRepository.findExamById(question.exam.id);
-        if (exam.activity.course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to update this question');
+        if (!isAdmin && exam.activity.course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to update this question');
+            error.statusCode = 403;
+            throw error;
         }
 
         return assessmentsRepository.updateQuestion(id, data);
@@ -145,7 +239,13 @@ class AssessmentsService {
     /**
      * Delete question
      */
-    async deleteQuestion(id, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async deleteQuestion(id, lecturerId, isAdmin = false) {
         const question = await assessmentsRepository.getQuestion(id);
 
         if (!question) {
@@ -153,8 +253,10 @@ class AssessmentsService {
         }
 
         const exam = await assessmentsRepository.findExamById(question.exam.id);
-        if (exam.activity.course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to delete this question');
+        if (!isAdmin && exam.activity.course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to delete this question');
+            error.statusCode = 403;
+            throw error;
         }
 
         return assessmentsRepository.deleteQuestion(id);
@@ -162,6 +264,12 @@ class AssessmentsService {
 
     /**
      * Start exam attempt
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async startAttempt(examId, userId) {
         const exam = await assessmentsRepository.findExamById(examId);
@@ -195,6 +303,12 @@ class AssessmentsService {
     /**
      * Submit exam attempt
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async submitAttempt(attemptId, answers, userId) {
         const attempt = await assessmentsRepository.getAttempt(attemptId);
 
@@ -227,6 +341,12 @@ class AssessmentsService {
 
     /**
      * Grade attempt (calculates score and pass status)
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async gradeAttempt(attemptId) {
         const attempt = await assessmentsRepository.getAttempt(attemptId);
@@ -266,6 +386,12 @@ class AssessmentsService {
     /**
      * Get user attempts for exam
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getUserAttempts(examId, userId) {
         const exam = await assessmentsRepository.findExamById(examId);
 
@@ -278,6 +404,12 @@ class AssessmentsService {
 
     /**
      * Get attempt results
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getAttemptResults(attemptId, userId) {
         const attempt = await assessmentsRepository.getAttempt(attemptId);
@@ -296,8 +428,20 @@ class AssessmentsService {
     /**
      * Create grading scheme
      */
-    async createGradingScheme(data, lecturerId) {
-        // Verify lecturer is authorized (you may need additional validation)
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async createGradingScheme(data, lecturerId, isAdmin = false) {
+        // Admin bypass: If admin, skip ownership check
+        // Verify lecturer is authorized
+        if (!isAdmin && !lecturerId) {
+            const error = new Error('Not authorized');
+            error.statusCode = 403;
+            throw error;
+        }
         return assessmentsRepository.createGradingScheme(data);
     }
 
@@ -311,7 +455,13 @@ class AssessmentsService {
     /**
      * Update grading scheme
      */
-    async updateGradingScheme(id, data, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async updateGradingScheme(id, data, lecturerId, isAdmin = false) {
         const scheme = await assessmentsRepository.getGradingScheme(id);
 
         if (!scheme) {
@@ -319,13 +469,24 @@ class AssessmentsService {
         }
 
         // Add additional authorization checks if needed
+        if (!isAdmin && !lecturerId) {
+            const error = new Error('Not authorized');
+            error.statusCode = 403;
+            throw error;
+        }
         return assessmentsRepository.updateGradingScheme(id, data);
     }
 
     /**
      * Delete grading scheme
      */
-    async deleteGradingScheme(id, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async deleteGradingScheme(id, lecturerId, isAdmin = false) {
         const scheme = await assessmentsRepository.getGradingScheme(id);
 
         if (!scheme) {
@@ -333,11 +494,22 @@ class AssessmentsService {
         }
 
         // Add additional authorization checks if needed
+        if (!isAdmin && !lecturerId) {
+            const error = new Error('Not authorized');
+            error.statusCode = 403;
+            throw error;
+        }
         return assessmentsRepository.deleteGradingScheme(id);
     }
 
     /**
      * Get exam statistics
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getExamStats(id) {
         const exam = await assessmentsRepository.findExamById(id);
@@ -351,3 +523,4 @@ class AssessmentsService {
 }
 
 module.exports = new AssessmentsService();
+

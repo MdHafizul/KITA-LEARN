@@ -8,6 +8,25 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class AssessmentsRepository {
+
+    /**
+     * Find all Exams with pagination
+     * @param {Object} options - Pagination options
+     * @param {number} options.page - Page number (default: 1)
+     * @param {number} options.limit - Items per page (default: 10)
+     * @returns {Object} - Paginated list of exams with metadata
+     */
+    async getAllExams({ page = 1, limit = 10 }) {
+        const skip = (page - 1) * limit;
+        const exams = await prisma.exam.findMany({
+            where: { deletedAt: null },
+            skip,
+            take: limit
+        });
+        const total = await prisma.exam.count({ where: { deletedAt: null } });
+        return { exams, total, page, limit };
+    }
+
     /**
      * Find exam by ID
      */
@@ -24,13 +43,9 @@ class AssessmentsRepository {
                     }
                 },
                 questions: {
-                    where: { deletedAt: null },
-                    orderBy: { questionOrder: 'asc' }
+                    orderBy: { displayOrder: 'asc' }
                 },
-                attempts: {
-                    where: { deletedAt: null }
-                },
-                gradingScheme: true
+                attempts: true
             }
         });
     }
@@ -43,8 +58,8 @@ class AssessmentsRepository {
             where: { activityId, deletedAt: null },
             include: {
                 activity: { select: { id: true, title: true } },
-                questions: { where: { deletedAt: null } },
-                attempts: { where: { deletedAt: null } }
+                questions: true,
+                attempts: true
             }
         });
     }
@@ -70,7 +85,7 @@ class AssessmentsRepository {
             data,
             include: {
                 activity: { select: { id: true, title: true } },
-                questions: { where: { deletedAt: null } }
+                questions: true
             }
         });
     }
@@ -102,7 +117,7 @@ class AssessmentsRepository {
      */
     async getQuestions(examId) {
         return prisma.examQuestion.findMany({
-            where: { examId, deletedAt: null },
+            where: { examId },
             orderBy: { displayOrder: 'asc' },
             include: {
                 exam: { select: { id: true } }
@@ -181,10 +196,10 @@ class AssessmentsRepository {
      */
     async getUserAttempts(examId, userId) {
         return prisma.examAttempt.findMany({
-            where: { examId, userId, deletedAt: null },
+            where: { examId, userId },
             include: {
                 exam: { select: { id: true, totalQuestions: true } },
-                answers: { where: { deletedAt: null } }
+                answers: true
             },
             orderBy: { startedAt: 'desc' }
         });
@@ -200,7 +215,6 @@ class AssessmentsRepository {
             include: {
                 exam: { select: { id: true, passingScore: true } },
                 answers: {
-                    where: { deletedAt: null },
                     include: {
                         question: { select: { id: true } }
                     }
@@ -227,7 +241,7 @@ class AssessmentsRepository {
      */
     async getAnswers(attemptId) {
         return prisma.examAnswer.findMany({
-            where: { attemptId, deletedAt: null },
+            where: { attemptId },
             include: {
                 question: {
                     select: { id: true, questionText: true, points: true }
@@ -250,7 +264,7 @@ class AssessmentsRepository {
      */
     async getOptionSnapshots(attemptId) {
         return prisma.attemptOptionSnapshot.findMany({
-            where: { attemptId, deletedAt: null },
+            where: { attemptId },
             orderBy: { createdAt: 'asc' }
         });
     }
@@ -314,15 +328,15 @@ class AssessmentsRepository {
         if (!exam) return null;
 
         const totalAttempts = await prisma.examAttempt.count({
-            where: { examId, deletedAt: null }
+            where: { examId }
         });
 
         const passedAttempts = await prisma.examAttempt.count({
-            where: { examId, deletedAt: null, passedStatus: true }
+            where: { examId, isPassed: true }
         });
 
         const averageScore = await prisma.examAttempt.aggregate({
-            where: { examId, deletedAt: null, score: { not: null } },
+            where: { examId, score: { not: null } },
             _avg: { score: true }
         });
 

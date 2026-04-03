@@ -10,7 +10,7 @@ const { z } = require('zod');
 // ============================================
 
 const CourseCreateDTO = z.object({
-    lecturerId: z.union([z.string().cuid(), z.string().uuid()]),
+    lecturerId: z.union([z.string().cuid(), z.string().uuid()]).optional(),
     title: z.string().min(3, 'Title must be at least 3 characters').max(255),
     description: z.string().min(10, 'Description must be at least 10 characters'),
     code: z.string().min(2).max(20).optional(),
@@ -30,8 +30,7 @@ const CourseUpdateDTO = z.object({
     difficultyLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
-    status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
-    isPublished: z.boolean().optional()
+    status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional()
 });
 
 const CourseResponseDTO = z.object({
@@ -47,7 +46,6 @@ const CourseResponseDTO = z.object({
     enrollmentCount: z.number().int(),
     startDate: z.string().datetime().nullable(),
     endDate: z.string().datetime().nullable(),
-    isPublished: z.boolean(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime()
 });

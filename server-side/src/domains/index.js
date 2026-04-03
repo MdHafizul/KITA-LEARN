@@ -3,7 +3,7 @@
  * Clean imports for all domain modules (routes, repositories, services)
  * 
  * Usage:
- *   const { lecturerRoutes, assessmentsRoutes, coursesRoutes, activitiesRoutes, enrollmentRoutes, submissionsRoutes } = require('./domains');
+ *   const { lecturerRoutes, assessmentsRoutes, coursesRoutes, activitiesRoutes, enrollmentRoutes, submissionsRoutes, gradesRoutes, announcementsRoutes } = require('./domains');
  */
 
 // ============================================
@@ -97,6 +97,144 @@ const {
 } = require('./submissions/dtos/submissions.dtos');
 
 // ============================================
+// GRADES DOMAIN
+// ============================================
+const gradesRoutes = require('./grades/routes/grades.routes');
+const gradesRepository = require('./grades/repositories/grades.repository');
+const gradesService = require('./grades/services/grades.service');
+const {
+    GradeCreateDTO,
+    GradeUpdateDTO,
+    GradeResponseDTO,
+    GradeWithRelationsDTO,
+    BulkGradeDTO,
+    GradeFilterDTO,
+    RubricCreateDTO,
+    RubricUpdateDTO,
+    RubricResponseDTO
+} = require('./grades/dtos/grades.dtos');
+
+// ============================================
+// ANNOUNCEMENTS DOMAIN
+// ============================================
+const announcementsRoutes = require('./announcements/routes/announcements.routes');
+const announcementsRepository = require('./announcements/repositories/announcements.repository');
+const announcementsService = require('./announcements/services/announcements.service');
+const {
+    AnnouncementCreateDTO,
+    AnnouncementUpdateDTO,
+    AnnouncementResponseDTO,
+    AnnouncementWithRelationsDTO,
+    AnnouncementFilterDTO,
+    AnnouncementReadDTO,
+    BulkAnnouncementCreateDTO,
+    AnnouncementRecipientDTO
+} = require('./announcements/dtos/announcements.dtos');
+
+// ============================================
+// CLASSES DOMAIN
+// ============================================
+const classesRoutes = require('./classes/routes/classes.routes');
+const classesRepository = require('./classes/repositories/classes.repository');
+const classesService = require('./classes/services/classes.service');
+const {
+    ClassCreateDTO,
+    ClassUpdateDTO,
+    ClassResponseDTO,
+    ClassWithRelationsDTO,
+    ClassFilterDTO,
+    BulkClassCreateDTO,
+    ClassEnrollmentCreateDTO,
+    ClassEnrollmentResponseDTO,
+    ClassEnrollmentUpdateDTO,
+    BulkClassEnrollmentDTO,
+    ClassSessionCreateDTO,
+    ClassSessionUpdateDTO,
+    ClassSessionResponseDTO,
+    ClassSessionFilterDTO
+} = require('./classes/dtos/classes.dtos');
+
+// ============================================
+// IDENTITY DOMAIN
+// ============================================
+const identityRoutes = require('./identity/routes/identity.routes');
+const identityRepository = require('./identity/repositories/identity.repository');
+const identityService = require('./identity/services/identity.service');
+const {
+    UserRegisterDTO,
+    UserLoginDTO,
+    UserUpdateDTO,
+    UserResponseDTO,
+    UserWithRolesDTO,
+    UserFilterDTO,
+    ChangePasswordDTO,
+    RoleCreateDTO,
+    RoleUpdateDTO,
+    RoleResponseDTO,
+    RoleWithPermissionsDTO,
+    PermissionCreateDTO,
+    PermissionUpdateDTO,
+    PermissionResponseDTO,
+    AssignPermissionToRoleDTO,
+    RolePermissionResponseDTO,
+    AssignRoleToUserDTO,
+    BulkAssignRolesToUserDTO,
+    UserRoleResponseDTO
+} = require('./identity/dtos/identity.dtos');
+
+// ============================================
+// SLT TRACKING DOMAIN
+// ============================================
+const sltTrackingRoutes = require('./slt-tracking/routes/slt-tracking.routes');
+const sltTrackingRepository = require('./slt-tracking/repositories/slt-tracking.repository');
+const sltTrackingService = require('./slt-tracking/services/slt-tracking.service');
+const {
+    ActivityTrackingCreateDTO,
+    ActivityTrackingUpdateDTO,
+    ActivityTrackingResponseDTO,
+    ActivityTrackingWithRelationsDTO,
+    ActivityTrackingFilterDTO,
+    BulkActivityTrackingDTO,
+    UpdateActivityProgressDTO,
+    StudentSltSummaryResponseDTO,
+    StudentSltSummaryWithUserDTO,
+    StudentSltSummaryFilterDTO,
+    UpdateSltSummaryDTO,
+    StudentLearningMetricsDTO,
+    CourseProgressDTO,
+    ActivityAnalyticsDTO,
+    ClassAnalyticsDTO
+} = require('./slt-tracking/dtos/slt-tracking.dtos');
+
+// ============================================
+// PROGRESSION & CERTIFICATES DOMAIN
+// ============================================
+const progressionCertificatesRoutes = require('./progression-certificates/routes/progression-certificates.routes');
+const progressionCertificatesRepository = require('./progression-certificates/repositories/progression-certificates.repository');
+const progressionCertificatesService = require('./progression-certificates/services/progression-certificates.service');
+const {
+    StudentProgressionCreateDTO,
+    StudentProgressionUpdateDTO,
+    StudentProgressionResponseDTO,
+    StudentProgressionWithUserDTO,
+    StudentProgressionFilterDTO,
+    AwardPointsDTO,
+    LevelUpDTO,
+    CertificateCreateDTO,
+    CertificateUpdateDTO,
+    CertificateResponseDTO,
+    CertificateWithUserDTO,
+    CertificateFilterDTO,
+    VerifyCertificateDTO,
+    CertificateValidationDTO,
+    BulkCertificateCreateDTO,
+    BulkCertificateVerifyDTO,
+    StudentAchievementDTO,
+    ProgressionMilestoneDTO,
+    UserAchievementSummaryDTO
+} = require('./progression-certificates/dtos/progression-certificates.dtos');
+
+// ============================================
 // EXPORTS - Routes (for app.js mounting)
 // ============================================
 module.exports.routes = {
@@ -105,7 +243,13 @@ module.exports.routes = {
     coursesRoutes,
     activitiesRoutes,
     enrollmentRoutes,
-    submissionsRoutes
+    submissionsRoutes,
+    gradesRoutes,
+    announcementsRoutes,
+    classesRoutes,
+    identityRoutes,
+    sltTrackingRoutes,
+    progressionCertificatesRoutes
 };
 
 // ============================================
@@ -117,7 +261,13 @@ module.exports.repositories = {
     coursesRepository,
     activitiesRepository,
     enrollmentRepository,
-    submissionsRepository
+    submissionsRepository,
+    gradesRepository,
+    announcementsRepository,
+    classesRepository,
+    identityRepository,
+    sltTrackingRepository,
+    progressionCertificatesRepository
 };
 
 // ============================================
@@ -129,7 +279,13 @@ module.exports.services = {
     coursesService,
     activitiesService,
     enrollmentService,
-    submissionsService
+    submissionsService,
+    gradesService,
+    announcementsService,
+    classesService,
+    identityService,
+    sltTrackingService,
+    progressionCertificatesService
 };
 
 // ============================================
@@ -183,6 +339,102 @@ module.exports.dtos = {
         SubmissionGradeDTO,
         BatchGradeDTO,
         SubmissionFilterDTO
+    },
+    grades: {
+        GradeCreateDTO,
+        GradeUpdateDTO,
+        GradeResponseDTO,
+        GradeWithRelationsDTO,
+        BulkGradeDTO,
+        GradeFilterDTO,
+        RubricCreateDTO,
+        RubricUpdateDTO,
+        RubricResponseDTO
+    },
+    announcements: {
+        AnnouncementCreateDTO,
+        AnnouncementUpdateDTO,
+        AnnouncementResponseDTO,
+        AnnouncementWithRelationsDTO,
+        AnnouncementFilterDTO,
+        AnnouncementReadDTO,
+        BulkAnnouncementCreateDTO,
+        AnnouncementRecipientDTO
+    },
+    classes: {
+        ClassCreateDTO,
+        ClassUpdateDTO,
+        ClassResponseDTO,
+        ClassWithRelationsDTO,
+        ClassFilterDTO,
+        BulkClassCreateDTO,
+        ClassEnrollmentCreateDTO,
+        ClassEnrollmentResponseDTO,
+        ClassEnrollmentUpdateDTO,
+        BulkClassEnrollmentDTO,
+        ClassSessionCreateDTO,
+        ClassSessionUpdateDTO,
+        ClassSessionResponseDTO,
+        ClassSessionFilterDTO
+    },
+    identity: {
+        UserRegisterDTO,
+        UserLoginDTO,
+        UserUpdateDTO,
+        UserResponseDTO,
+        UserWithRolesDTO,
+        UserFilterDTO,
+        ChangePasswordDTO,
+        RoleCreateDTO,
+        RoleUpdateDTO,
+        RoleResponseDTO,
+        RoleWithPermissionsDTO,
+        PermissionCreateDTO,
+        PermissionUpdateDTO,
+        PermissionResponseDTO,
+        AssignPermissionToRoleDTO,
+        RolePermissionResponseDTO,
+        AssignRoleToUserDTO,
+        BulkAssignRolesToUserDTO,
+        UserRoleResponseDTO
+    },
+    sltTracking: {
+        ActivityTrackingCreateDTO,
+        ActivityTrackingUpdateDTO,
+        ActivityTrackingResponseDTO,
+        ActivityTrackingWithRelationsDTO,
+        ActivityTrackingFilterDTO,
+        BulkActivityTrackingDTO,
+        UpdateActivityProgressDTO,
+        StudentSltSummaryResponseDTO,
+        StudentSltSummaryWithUserDTO,
+        StudentSltSummaryFilterDTO,
+        UpdateSltSummaryDTO,
+        StudentLearningMetricsDTO,
+        CourseProgressDTO,
+        ActivityAnalyticsDTO,
+        ClassAnalyticsDTO
+    },
+    progressionCertificates: {
+        StudentProgressionCreateDTO,
+        StudentProgressionUpdateDTO,
+        StudentProgressionResponseDTO,
+        StudentProgressionWithUserDTO,
+        StudentProgressionFilterDTO,
+        AwardPointsDTO,
+        LevelUpDTO,
+        CertificateCreateDTO,
+        CertificateUpdateDTO,
+        CertificateResponseDTO,
+        CertificateWithUserDTO,
+        CertificateFilterDTO,
+        VerifyCertificateDTO,
+        CertificateValidationDTO,
+        BulkCertificateCreateDTO,
+        BulkCertificateVerifyDTO,
+        StudentAchievementDTO,
+        ProgressionMilestoneDTO,
+        UserAchievementSummaryDTO
     }
 };
 
@@ -195,6 +447,12 @@ module.exports.coursesRoutes = coursesRoutes;
 module.exports.activitiesRoutes = activitiesRoutes;
 module.exports.enrollmentRoutes = enrollmentRoutes;
 module.exports.submissionsRoutes = submissionsRoutes;
+module.exports.gradesRoutes = gradesRoutes;
+module.exports.announcementsRoutes = announcementsRoutes;
+module.exports.classesRoutes = classesRoutes;
+module.exports.identityRoutes = identityRoutes;
+module.exports.sltTrackingRoutes = sltTrackingRoutes;
+module.exports.progressionCertificatesRoutes = progressionCertificatesRoutes;
 
 module.exports.lecturerService = lecturerService;
 module.exports.assessmentsService = assessmentsService;
@@ -202,3 +460,9 @@ module.exports.coursesService = coursesService;
 module.exports.activitiesService = activitiesService;
 module.exports.enrollmentService = enrollmentService;
 module.exports.submissionsService = submissionsService;
+module.exports.gradesService = gradesService;
+module.exports.announcementsService = announcementsService;
+module.exports.classesService = classesService;
+module.exports.identityService = identityService;
+module.exports.sltTrackingService = sltTrackingService;
+module.exports.progressionCertificatesService = progressionCertificatesService;

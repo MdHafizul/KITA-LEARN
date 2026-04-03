@@ -23,7 +23,7 @@ class ActivitiesRepository {
                     }
                 },
                 prerequisites: true,
-                content: true,
+                contentActivity: true,
                 assignment: true
             }
         });
@@ -41,7 +41,7 @@ class ActivitiesRepository {
             take: limit,
             include: {
                 course: { select: { id: true, title: true } },
-                content: true,
+                contentActivity: true,
                 assignment: true
             },
             orderBy: { displayOrder: 'asc' }
@@ -66,7 +66,7 @@ class ActivitiesRepository {
             take: limit,
             include: {
                 course: { select: { id: true, title: true } },
-                content: true,
+                contentActivity: true,
                 assignment: true
             },
             orderBy: { displayOrder: 'asc' }
@@ -100,7 +100,7 @@ class ActivitiesRepository {
             data,
             include: {
                 course: { select: { id: true, title: true } },
-                content: true,
+                contentActivity: true,
                 assignment: true
             }
         });
@@ -256,7 +256,7 @@ class ActivitiesRepository {
         if (!activity) return null;
 
         const studentTrackingCount = await prisma.studentActivityTracking.count({
-            where: { activityId, deletedAt: null }
+            where: { activityId }
         });
 
         const submissionsCount = await prisma.submission.count({

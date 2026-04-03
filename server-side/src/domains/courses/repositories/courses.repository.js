@@ -80,7 +80,7 @@ class CoursesRepository {
         const skip = (page - 1) * limit;
 
         const courses = await prisma.course.findMany({
-            where: { deletedAt: null, isPublished: true },
+            where: { deletedAt: null, status: 'PUBLISHED', isActive: true },
             skip,
             take: limit,
             include: {
@@ -105,7 +105,7 @@ class CoursesRepository {
         });
 
         const total = await prisma.course.count({
-            where: { deletedAt: null, isPublished: true }
+            where: { deletedAt: null, status: 'PUBLISHED', isActive: true }
         });
 
         return { courses, total, page, limit };

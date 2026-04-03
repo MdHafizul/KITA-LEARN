@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Controller handlers receive validated HTTP input and return consistent JSON responses.
+ * Params: Read from req.params and req.query; validate and sanitize before passing to services.
+ * Body: Read from req.body using DTO/schema validation before business logic execution.
+ * Auth Headers: Expect Authorization: Bearer <token> when route is protected; enforce role checks in routes/middleware.
+ */
+
+/**
  * Lecturer Controller
  * HTTP handlers for lecturer endpoints
  */
@@ -9,8 +17,10 @@ const { LecturerCreateDTO, LecturerUpdateDTO } = require('../dtos/lecturer.dtos'
 
 class LecturerController {
     /**
-     * GET /api/v1/lecturers
-     * Get all lecturers with pagination
+     * @DESC: Retrieve all lecturers with pagination
+     * @Params: page (query), limit (query)
+     * @Body: N/A
+     * @Auth: Public - No authentication required
      */
     async getAllLecturers(req, res, next) {
         try {
@@ -38,8 +48,10 @@ class LecturerController {
     }
 
     /**
-     * GET /api/v1/lecturers/:id
-     * Get lecturer by ID
+     * @DESC: Retrieve a single lecturer by ID
+     * @Params: id (path) - Lecturer CUID/UUID
+     * @Body: N/A
+     * @Auth: Public - No authentication required
      */
     async getLecturerById(req, res, next) {
         try {
@@ -57,8 +69,10 @@ class LecturerController {
     }
 
     /**
-     * GET /api/v1/lecturers/user/:userId
-     * Get lecturer profile by user ID
+     * @DESC: Retrieve lecturer profile by associated user ID
+     * @Params: userId (path) - User CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getLecturerByUserId(req, res, next) {
         try {
@@ -76,8 +90,10 @@ class LecturerController {
     }
 
     /**
-     * POST /api/v1/lecturers
-     * Create lecturer profile (Admin only)
+     * @DESC: Create a new lecturer profile
+     * @Params: N/A
+     * @Body: { userId, department, qualification, yearsExperience, specialization }
+     * @Auth: Bearer token + [admin] role required
      */
     async createLecturerProfile(req, res, next) {
         try {
@@ -96,8 +112,10 @@ class LecturerController {
     }
 
     /**
-     * PUT /api/v1/lecturers/:id
-     * Update lecturer profile (Admin/Self only)
+     * @DESC: Update existing lecturer profile
+     * @Params: id (path) - Lecturer CUID/UUID
+     * @Body: { department, qualification, yearsExperience, specialization } - all fields optional
+     * @Auth: Bearer token + [admin] role required
      */
     async updateLecturerProfile(req, res, next) {
         try {
@@ -117,8 +135,10 @@ class LecturerController {
     }
 
     /**
-     * DELETE /api/v1/lecturers/:id
-     * Delete lecturer profile (Admin only)
+     * @DESC: Delete lecturer profile (soft delete)
+     * @Params: id (path) - Lecturer CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [admin] role required
      */
     async deleteLecturerProfile(req, res, next) {
         try {
@@ -136,8 +156,10 @@ class LecturerController {
     }
 
     /**
-     * GET /api/v1/lecturers/:id/courses
-     * Get lecturer's courses
+     * @DESC: Retrieve all courses taught by a lecturer
+     * @Params: id (path) - Lecturer CUID/UUID, page (query), limit (query)
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getLecturerCourses(req, res, next) {
         try {
@@ -166,8 +188,10 @@ class LecturerController {
     }
 
     /**
-     * GET /api/v1/lecturers/:id/stats
-     * Get lecturer statistics
+     * @DESC: Retrieve lecturer performance and activity statistics
+     * @Params: id (path) - Lecturer CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [admin, lecturer] role required
      */
     async getLecturerStats(req, res, next) {
         try {
@@ -186,3 +210,4 @@ class LecturerController {
 }
 
 module.exports = new LecturerController();
+

@@ -248,7 +248,7 @@ apiV1.use('/exams', examRoutes);
 apiV1.use('/submissions', submissionRoutes);
 
 // Grading Routes
-apiV1.use('/grading', gradingRoutes);
+apiV1.use('/grades', gradingRoutes);
 
 // Certificate Routes
 apiV1.use('/certificates', certificateRoutes);

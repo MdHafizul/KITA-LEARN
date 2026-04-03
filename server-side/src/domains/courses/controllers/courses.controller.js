@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Controller handlers receive validated HTTP input and return consistent JSON responses.
+ * Params: Read from req.params and req.query; validate and sanitize before passing to services.
+ * Body: Read from req.body using DTO/schema validation before business logic execution.
+ * Auth Headers: Expect Authorization: Bearer <token> when route is protected; enforce role checks in routes/middleware.
+ */
+
+/**
  * Courses Controller
  * HTTP handlers for course endpoints
  */
@@ -17,6 +25,12 @@ class CoursesController {
     /**
      * GET /api/v1/courses
      * Get all published courses with pagination
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getAllCourses(req, res, next) {
         try {
@@ -47,6 +61,12 @@ class CoursesController {
      * GET /api/v1/courses/:id
      * Get course by ID
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async getCourse(req, res, next) {
         try {
             const { id } = req.params;
@@ -65,6 +85,12 @@ class CoursesController {
     /**
      * GET /api/v1/lecturers/:lecturerId/courses
      * Get courses by lecturer ID
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getCoursesByLecturer(req, res, next) {
         try {
@@ -96,19 +122,40 @@ class CoursesController {
      * POST /api/v1/courses
      * Create new course (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async createCourse(req, res, next) {
         try {
             const validated = CourseCreateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated or user ID not found'
                 });
             }
 
-            const course = await coursesService.createCourse(validated, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile. Contact admin to set up lecturer access.'
+                });
+            }
+
+            const course = await coursesService.createCourse(validated, lecturerProfile.id);
 
             res.status(statusCodes.CREATED).json({
                 success: true,
@@ -124,20 +171,41 @@ class CoursesController {
      * PUT /api/v1/courses/:id
      * Update course (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async updateCourse(req, res, next) {
         try {
             const { id } = req.params;
             const validated = CourseUpdateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const course = await coursesService.updateCourse(id, validated, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const course = await coursesService.updateCourse(id, validated, lecturerProfile.id);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -153,19 +221,42 @@ class CoursesController {
      * DELETE /api/v1/courses/:id
      * Delete course (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async deleteCourse(req, res, next) {
         try {
             const { id } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const isAdmin = req.isAdmin || false;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            await coursesService.deleteCourse(id, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile && !isAdmin) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const lecturerId = lecturerProfile?.id || null;
+            await coursesService.deleteCourse(id, lecturerId, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -180,19 +271,42 @@ class CoursesController {
      * POST /api/v1/courses/:id/publish
      * Publish course (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async publishCourse(req, res, next) {
         try {
             const { id } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const isAdmin = req.isAdmin || false;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const course = await coursesService.publishCourse(id, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile && !isAdmin) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const lecturerId = lecturerProfile?.id || null;
+            const course = await coursesService.publishCourse(id, lecturerId, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -208,19 +322,42 @@ class CoursesController {
      * POST /api/v1/courses/:id/archive
      * Archive course (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async archiveCourse(req, res, next) {
         try {
             const { id } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const isAdmin = req.isAdmin || false;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const course = await coursesService.archiveCourse(id, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile && !isAdmin) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const lecturerId = lecturerProfile?.id || null;
+            const course = await coursesService.archiveCourse(id, lecturerId, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -235,6 +372,12 @@ class CoursesController {
     /**
      * GET /api/v1/courses/:id/stats
      * Get course statistics
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getCourseStats(req, res, next) {
         try {
@@ -255,11 +398,17 @@ class CoursesController {
      * POST /api/v1/courses/:courseId/prerequisites
      * Add course prerequisite (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async addPrerequisite(req, res, next) {
         try {
             const { courseId } = req.params;
             const { prerequisiteCourseId } = req.body;
-            const lecturerId = req.user?.lecturerId;
+            const lecturerId = req.user?.i
 
             if (!lecturerId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
@@ -288,6 +437,12 @@ class CoursesController {
      * GET /api/v1/courses/:courseId/prerequisites
      * Get course prerequisites
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async getPrerequisites(req, res, next) {
         try {
             const { courseId } = req.params;
@@ -306,6 +461,12 @@ class CoursesController {
     /**
      * GET /api/v1/courses/:courseId/materials
      * Get course materials with pagination
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getMaterials(req, res, next) {
         try {
@@ -337,6 +498,12 @@ class CoursesController {
      * POST /api/v1/courses/:courseId/materials
      * Add course material (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async addMaterial(req, res, next) {
         try {
             const { courseId } = req.params;
@@ -344,7 +511,7 @@ class CoursesController {
                 courseId,
                 ...req.body
             });
-            const lecturerId = req.user?.lecturerId;
+            const lecturerId = req.user?.i
 
             if (!lecturerId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
@@ -369,11 +536,17 @@ class CoursesController {
      * PUT /api/v1/courses/materials/:materialId
      * Update course material (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async updateMaterial(req, res, next) {
         try {
             const { materialId } = req.params;
             const validated = CourseMaterialUpdateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const lecturerId = req.user?.i
 
             if (!lecturerId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
@@ -398,10 +571,16 @@ class CoursesController {
      * DELETE /api/v1/courses/materials/:materialId
      * Delete course material (Lecturer only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async deleteMaterial(req, res, next) {
         try {
             const { materialId } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const lecturerId = req.user?.id;
 
             if (!lecturerId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
@@ -423,3 +602,4 @@ class CoursesController {
 }
 
 module.exports = new CoursesController();
+

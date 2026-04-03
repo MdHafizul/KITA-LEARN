@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Service layer contains business rules, orchestrates repositories, and throws domain-specific errors.
+ * Params: Accept explicit method arguments (ids, filters, payload objects) from controllers.
+ * Body: N/A at transport level; use validated payload objects received from controller layer.
+ * Auth Headers: N/A at service level; authorization is enforced at route/controller boundary before service calls.
+ */
+
+/**
  * Courses Service
  * Business logic for course operations
  */
@@ -13,6 +21,12 @@ class CoursesService {
     /**
      * Get course by ID
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getCourseById(id) {
         const course = await coursesRepository.findCourseById(id);
 
@@ -25,6 +39,12 @@ class CoursesService {
 
     /**
      * Get all courses by lecturer
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getCoursesByLecturerId(lecturerId, pagination) {
         const lecturer = await prisma.lecturerProfile.findUnique({
@@ -40,6 +60,12 @@ class CoursesService {
 
     /**
      * Get all published courses
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getAllCourses(pagination) {
         return coursesRepository.findAll(pagination);
@@ -62,7 +88,7 @@ class CoursesService {
             ...data,
             lecturerId,
             enrollmentCount: 0,
-            isPublished: false
+            status: 'DRAFT'
         };
 
         return coursesRepository.createCourse(courseData);
@@ -70,17 +96,26 @@ class CoursesService {
 
     /**
      * Update course
+     * Admin Bypass Pattern: If isAdmin=true, skip ownership check
      */
-    async updateCourse(id, data, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async updateCourse(id, data, lecturerId, isAdmin = false) {
         const course = await coursesRepository.findCourseById(id);
 
         if (!course) {
             throw new ValidationException('Course not found');
         }
 
-        // Verify ownership
-        if (course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to update this course');
+        // Admin bypass: If not admin, verify ownership by comparing lecturer profile IDs
+        if (!isAdmin && course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to update this course');
+            error.statusCode = 403;
+            throw error;
         }
 
         return coursesRepository.updateCourse(id, data);
@@ -88,17 +123,26 @@ class CoursesService {
 
     /**
      * Delete course (soft delete)
+     * Admin Bypass Pattern: If isAdmin=true, skip ownership check
      */
-    async deleteCourse(id, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async deleteCourse(id, lecturerId, isAdmin = false) {
         const course = await coursesRepository.findCourseById(id);
 
         if (!course) {
             throw new ValidationException('Course not found');
         }
 
-        // Verify ownership
-        if (course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to delete this course');
+        // Admin bypass: If not admin, verify ownership by comparing lecturer profile IDs
+        if (!isAdmin && lecturerId && course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to delete this course');
+            error.statusCode = 403;
+            throw error;
         }
 
         return coursesRepository.deleteCourse(id);
@@ -106,33 +150,53 @@ class CoursesService {
 
     /**
      * Publish course
+     * Admin Bypass Pattern: If isAdmin=true, skip ownership check
      */
-    async publishCourse(id, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async publishCourse(id, lecturerId, isAdmin = false) {
         const course = await coursesRepository.findCourseById(id);
 
         if (!course) {
             throw new ValidationException('Course not found');
         }
 
-        if (course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to publish this course');
+        // Admin bypass: If not admin, verify ownership by comparing lecturer profile IDs
+        if (!isAdmin && lecturerId && course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to publish this course');
+            error.statusCode = 403;
+            throw error;
         }
 
-        return coursesRepository.updateCourse(id, { isPublished: true, status: 'PUBLISHED' });
+        return coursesRepository.updateCourse(id, { status: 'PUBLISHED' });
     }
 
     /**
      * Archive course
+     * Admin Bypass Pattern: If isAdmin=true, skip ownership check
      */
-    async archiveCourse(id, lecturerId) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async archiveCourse(id, lecturerId, isAdmin = false) {
         const course = await coursesRepository.findCourseById(id);
 
         if (!course) {
             throw new ValidationException('Course not found');
         }
 
-        if (course.lecturerId !== lecturerId) {
-            throw new ValidationException('Not authorized to archive this course');
+        // Admin bypass: If not admin, verify ownership by comparing lecturer profile IDs
+        if (!isAdmin && lecturerId && course.lecturerId !== lecturerId) {
+            const error = new Error('Not authorized to archive this course');
+            error.statusCode = 403;
+            throw error;
         }
 
         return coursesRepository.updateCourse(id, { status: 'ARCHIVED' });
@@ -140,6 +204,12 @@ class CoursesService {
 
     /**
      * Add course prerequisite
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async addPrerequisite(courseId, prerequisiteCourseId, lecturerId) {
         const course = await coursesRepository.findCourseById(courseId);
@@ -180,6 +250,12 @@ class CoursesService {
     /**
      * Get course prerequisites
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getPrerequisites(courseId) {
         const course = await coursesRepository.findCourseById(courseId);
 
@@ -192,6 +268,12 @@ class CoursesService {
 
     /**
      * Remove course prerequisite
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async removePrerequisite(id, lecturerId) {
         const prerequisite = await prisma.coursePrerequisite.findUnique({
@@ -213,6 +295,12 @@ class CoursesService {
     /**
      * Add course material
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async addMaterial(data, lecturerId) {
         const course = await coursesRepository.findCourseById(data.courseId);
 
@@ -230,6 +318,12 @@ class CoursesService {
     /**
      * Get course materials
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getMaterials(courseId, pagination) {
         const course = await coursesRepository.findCourseById(courseId);
 
@@ -242,6 +336,12 @@ class CoursesService {
 
     /**
      * Update course material
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async updateMaterial(id, data, lecturerId) {
         const material = await prisma.courseMaterial.findUnique({
@@ -263,6 +363,12 @@ class CoursesService {
     /**
      * Delete course material
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async deleteMaterial(id, lecturerId) {
         const material = await prisma.courseMaterial.findUnique({
             where: { id },
@@ -283,6 +389,12 @@ class CoursesService {
     /**
      * Get course statistics
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getCourseStats(id) {
         const course = await coursesRepository.findCourseById(id);
 
@@ -295,3 +407,4 @@ class CoursesService {
 }
 
 module.exports = new CoursesService();
+

@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Controller handlers receive validated HTTP input and return consistent JSON responses.
+ * Params: Read from req.params and req.query; validate and sanitize before passing to services.
+ * Body: Read from req.body using DTO/schema validation before business logic execution.
+ * Auth Headers: Expect Authorization: Bearer <token> when route is protected; enforce role checks in routes/middleware.
+ */
+
+/**
  * Enrollment Controller
  * HTTP handlers for enrollment endpoints
  */
@@ -16,6 +24,12 @@ class EnrollmentController {
     /**
      * GET /api/v1/enrollments/:id
      * Get enrollment by ID
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getEnrollment(req, res, next) {
         try {
@@ -35,17 +49,23 @@ class EnrollmentController {
      * GET /api/v1/courses/:courseId/enrollments
      * Get enrollments for a course (course instructor only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async getEnrollmentsByCourse(req, res, next) {
         try {
             const { courseId } = req.params;
             const { page = 1, limit = 10 } = req.query;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
             const result = await enrollmentService.getEnrollmentsByCourse(
                 courseId,
                 { page: parseInt(page), limit: parseInt(limit) },
-                userId,
-                role
+                actor,
+                req.isAdminBypass
             );
 
             res.status(statusCodes.OK).json({
@@ -65,6 +85,12 @@ class EnrollmentController {
     /**
      * GET /api/v1/me/enrollments
      * Get current user's enrollments
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getMyEnrollments(req, res, next) {
         try {
@@ -93,6 +119,12 @@ class EnrollmentController {
     /**
      * GET /api/v1/enrollments
      * Get enrollments with filters (admin only)
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async listEnrollments(req, res, next) {
         try {
@@ -126,6 +158,12 @@ class EnrollmentController {
      * POST /api/v1/enrollments
      * Enroll student in course
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async enrollUser(req, res, next) {
         try {
             const validated = EnrollmentCreateDTO.parse(req.body);
@@ -155,6 +193,12 @@ class EnrollmentController {
      * POST /api/v1/courses/:courseId/enrollments/bulk
      * Bulk enroll students (instructor only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async bulkEnroll(req, res, next) {
         try {
             const { courseId } = req.params;
@@ -162,13 +206,13 @@ class EnrollmentController {
                 courseId,
                 userIds: req.body.userIds
             });
-            const { userId, role } = req.user;
+            const actor = req.user;
 
             const enrollments = await enrollmentService.bulkEnroll(
                 validated.courseId,
                 validated.userIds,
-                userId,
-                role
+                actor,
+                req.isAdminBypass
             );
 
             res.status(statusCodes.CREATED).json({
@@ -185,13 +229,19 @@ class EnrollmentController {
      * PUT /api/v1/enrollments/:id
      * Update enrollment status or progress
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async updateEnrollment(req, res, next) {
         try {
             const { id } = req.params;
             const validated = EnrollmentUpdateDTO.parse(req.body);
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const enrollment = await enrollmentService.updateEnrollment(id, validated, userId, role);
+            const enrollment = await enrollmentService.updateEnrollment(id, validated, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -206,6 +256,12 @@ class EnrollmentController {
     /**
      * PATCH /api/v1/enrollments/:id/progress
      * Update enrollment progress
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async updateProgress(req, res, next) {
         try {
@@ -236,12 +292,18 @@ class EnrollmentController {
      * PATCH /api/v1/enrollments/:id/suspend
      * Suspend enrollment (instructor only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async suspendEnrollment(req, res, next) {
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const enrollment = await enrollmentService.suspendEnrollment(id, userId, role);
+            const enrollment = await enrollmentService.suspendEnrollment(id, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -257,12 +319,18 @@ class EnrollmentController {
      * PATCH /api/v1/enrollments/:id/complete
      * Mark enrollment as completed
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async completeEnrollment(req, res, next) {
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const enrollment = await enrollmentService.completeEnrollment(id, userId, role);
+            const enrollment = await enrollmentService.completeEnrollment(id, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -278,12 +346,18 @@ class EnrollmentController {
      * PATCH /api/v1/enrollments/:id/drop
      * Drop enrollment (student action)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async dropEnrollment(req, res, next) {
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const enrollment = await enrollmentService.dropEnrollment(id, userId, role);
+            const enrollment = await enrollmentService.dropEnrollment(id, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -299,12 +373,18 @@ class EnrollmentController {
      * DELETE /api/v1/enrollments/:id
      * Delete enrollment (instructor only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async deleteEnrollment(req, res, next) {
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            await enrollmentService.deleteEnrollment(id, userId, role);
+            await enrollmentService.deleteEnrollment(id, actor, req.isAdminBypass);
 
             res.status(statusCodes.NO_CONTENT).send();
         } catch (error) {
@@ -316,12 +396,18 @@ class EnrollmentController {
      * GET /api/v1/courses/:courseId/enrollments/stats
      * Get course enrollment statistics (instructor only)
      */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+     */
     async getCourseStats(req, res, next) {
         try {
             const { courseId } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const stats = await enrollmentService.getCourseStatistics(courseId, userId, role);
+            const stats = await enrollmentService.getCourseStatistics(courseId, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -335,6 +421,12 @@ class EnrollmentController {
     /**
      * GET /api/v1/me/enrollments/count
      * Get current user's active enrollment count
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async getMyEnrollmentCount(req, res, next) {
         try {
@@ -354,6 +446,12 @@ class EnrollmentController {
     /**
      * GET /api/v1/enrollments/check
      * Check if user is enrolled in course
+     */
+    /**
+     * Desc: Controller function orchestrates request handling and JSON response mapping.
+     * Params: Read required path/query values from req.params and req.query.
+     * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+     * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
      */
     async checkEnrollment(req, res, next) {
         try {
@@ -380,3 +478,5 @@ class EnrollmentController {
 }
 
 module.exports = new EnrollmentController();
+
+

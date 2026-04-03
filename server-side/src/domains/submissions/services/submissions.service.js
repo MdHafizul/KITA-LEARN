@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Service layer contains business rules, orchestrates repositories, and throws domain-specific errors.
+ * Params: Accept explicit method arguments (ids, filters, payload objects) from controllers.
+ * Body: N/A at transport level; use validated payload objects received from controller layer.
+ * Auth Headers: N/A at service level; authorization is enforced at route/controller boundary before service calls.
+ */
+
+/**
  * Submissions Service
  * Business logic for assignment submission operations
  */
@@ -13,6 +21,12 @@ class SubmissionsService {
     /**
      * Get submission by ID
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getSubmissionById(id) {
         const submission = await submissionsRepository.findById(id);
 
@@ -25,6 +39,12 @@ class SubmissionsService {
 
     /**
      * Get submissions for an activity (instructor only)
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getSubmissionsByActivity(activityId, pagination, requestorId, requestorRole) {
         // Verify activity exists and get course info
@@ -48,6 +68,12 @@ class SubmissionsService {
     /**
      * Get submissions by user
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getSubmissionsByUser(userId, pagination) {
         return submissionsRepository.findByUser(userId, pagination);
     }
@@ -61,6 +87,12 @@ class SubmissionsService {
 
     /**
      * Create/initialize submission (open submission for activity)
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async createSubmission(activityId, userId) {
         // Verify activity exists
@@ -129,7 +161,13 @@ class SubmissionsService {
     /**
      * Update submission draft
      */
-    async updateSubmission(id, data, userId, requestorRole) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async updateSubmission(id, data, actor, isAdminBypass = false) {
         const submission = await submissionsRepository.findById(id);
 
         if (!submission) {
@@ -137,8 +175,10 @@ class SubmissionsService {
         }
 
         // Authorization: only submission owner or admin
-        if (requestorRole !== 'ADMIN' && submission.userId !== userId) {
-            throw new ValidationException('You can only edit your own submission', 403);
+        if (!isAdminBypass && submission.userId !== actor.id) {
+            const error = new Error('You can only edit your own submission');
+            error.statusCode = 403;
+            throw error;
         }
 
         // Can only edit draft submissions
@@ -152,7 +192,13 @@ class SubmissionsService {
     /**
      * Submit assignment
      */
-    async submitAssignment(id, userId, requestorRole) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async submitAssignment(id, actor, isAdminBypass = false) {
         const submission = await submissionsRepository.findById(id);
 
         if (!submission) {
@@ -160,8 +206,10 @@ class SubmissionsService {
         }
 
         // Authorization: only submission owner or admin
-        if (requestorRole !== 'ADMIN' && submission.userId !== userId) {
-            throw new ValidationException('You can only submit your own assignment', 403);
+        if (!isAdminBypass && submission.userId !== actor.id) {
+            const error = new Error('You can only submit your own assignment');
+            error.statusCode = 403;
+            throw error;
         }
 
         // Can only submit draft submissions
@@ -204,16 +252,29 @@ class SubmissionsService {
     /**
      * Grade submission
      */
-    async gradeSubmission(id, score, feedback, requestorId, requestorRole) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async gradeSubmission(id, score, feedback, actor, isAdminBypass = false) {
         const submission = await submissionsRepository.findById(id);
 
         if (!submission) {
             throw new ValidationException('Submission not found', 404);
         }
 
+        // Fetch LecturerProfile for ownership check
+        const lecturerProfile = await prisma.lecturerProfile.findUnique({
+            where: { userId: actor.id }
+        });
+
         // Authorization: only course instructor or admin
-        if (requestorRole !== 'ADMIN' && submission.activity.course?.lecturerId !== requestorId) {
-            throw new ValidationException('Only instructors can grade submissions', 403);
+        if (!isAdminBypass && (!lecturerProfile || submission.activity.course?.lecturerId !== lecturerProfile.id)) {
+            const error = new Error('Only instructors can grade submissions');
+            error.statusCode = 403;
+            throw error;
         }
 
         // Can only grade submitted or returned submissions
@@ -242,7 +303,13 @@ class SubmissionsService {
     /**
      * Batch grade multiple submissions
      */
-    async batchGrade(activityId, grades, requestorId, requestorRole) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async batchGrade(activityId, grades, actor, isAdminBypass = false) {
         // Verify activity exists and authorize
         const activity = await prisma.learningActivity.findUnique({
             where: { id: activityId },
@@ -253,15 +320,22 @@ class SubmissionsService {
             throw new ValidationException('Activity not found', 404);
         }
 
+        // Fetch LecturerProfile for ownership check
+        const lecturerProfile = await prisma.lecturerProfile.findUnique({
+            where: { userId: actor.id }
+        });
+
         // Authorization check
-        if (requestorRole !== 'ADMIN' && activity.course.lecturerId !== requestorId) {
-            throw new ValidationException('Only course instructors can grade submissions', 403);
+        if (!isAdminBypass && (!lecturerProfile || activity.course.lecturerId !== lecturerProfile.id)) {
+            const error = new Error('Only course instructors can grade submissions');
+            error.statusCode = 403;
+            throw error;
         }
 
         // Grade each submission
         const results = await Promise.all(
             grades.map(({ submissionId, score, feedback }) =>
-                this.gradeSubmission(submissionId, score, feedback, requestorId, requestorRole)
+                this.gradeSubmission(submissionId, score, feedback, actor, isAdminBypass)
                     .catch(error => ({ error: error.message, submissionId }))
             )
         );
@@ -275,16 +349,29 @@ class SubmissionsService {
     /**
      * Return submission for revision
      */
-    async returnForRevision(id, feedback, requestorId, requestorRole) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async returnForRevision(id, feedback, actor, isAdminBypass = false) {
         const submission = await submissionsRepository.findById(id);
 
         if (!submission) {
             throw new ValidationException('Submission not found', 404);
         }
 
+        // Fetch LecturerProfile for ownership check
+        const lecturerProfile = await prisma.lecturerProfile.findUnique({
+            where: { userId: actor.id }
+        });
+
         // Authorization: only instructor or admin
-        if (requestorRole !== 'ADMIN' && submission.activity.course?.lecturerId !== requestorId) {
-            throw new ValidationException('Only instructors can return submissions', 403);
+        if (!isAdminBypass && (!lecturerProfile || submission.activity.course?.lecturerId !== lecturerProfile.id)) {
+            const error = new Error('Only instructors can return submissions');
+            error.statusCode = 403;
+            throw error;
         }
 
         // Can return graded or submitted submissions
@@ -298,17 +385,28 @@ class SubmissionsService {
     /**
      * Delete submission
      */
-    async deleteSubmission(id, requestorId, requestorRole) {
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
+    async deleteSubmission(id, actor, isAdminBypass = false) {
         const submission = await submissionsRepository.findById(id);
 
         if (!submission) {
             throw new ValidationException('Submission not found', 404);
         }
 
+        // Fetch LecturerProfile for instructor check
+        const lecturerProfile = await prisma.lecturerProfile.findUnique({
+            where: { userId: actor.id }
+        });
+
         // Authorization: submission owner or instructor or admin
-        const isOwner = submission.userId === requestorId;
-        const isInstructor = submission.activity.course?.lecturerId === requestorId;
-        const isAdmin = requestorRole === 'ADMIN';
+        const isOwner = submission.userId === actor.id;
+        const isInstructor = lecturerProfile && submission.activity.course?.lecturerId === lecturerProfile.id;
+        const isAdmin = isAdminBypass;
 
         if (!isOwner && !isInstructor && !isAdmin) {
             throw new ValidationException('Not authorized to delete this submission', 403);
@@ -319,6 +417,12 @@ class SubmissionsService {
 
     /**
      * Get activity submission statistics
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getActivityStatistics(activityId, requestorId, requestorRole) {
         // Verify activity exists and authorize
@@ -340,6 +444,12 @@ class SubmissionsService {
 
     /**
      * Get user submission statistics
+     */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
      */
     async getUserStatistics(userId) {
         return submissionsRepository.getUserStats(userId);
@@ -369,6 +479,12 @@ class SubmissionsService {
     /**
      * Get ungraded submissions for activity
      */
+    /**
+     * Desc: Service function executes domain business logic and repository orchestration.
+     * Params: Accept explicit method arguments passed from controller or internal callers.
+     * Body: N/A at service layer; consume already validated payload objects.
+     * Auth Headers: N/A at service layer; authorization is handled before service invocation.
+     */
     async getUngradedSubmissions(activityId, requestorId, requestorRole) {
         // Verify activity and authorize
         const activity = await prisma.learningActivity.findUnique({
@@ -389,3 +505,4 @@ class SubmissionsService {
 }
 
 module.exports = new SubmissionsService();
+

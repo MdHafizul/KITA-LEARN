@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Controller handlers receive validated HTTP input and return consistent JSON responses.
+ * Params: Read from req.params and req.query; validate and sanitize before passing to services.
+ * Body: Read from req.body using DTO/schema validation before business logic execution.
+ * Auth Headers: Expect Authorization: Bearer <token> when route is protected; enforce role checks in routes/middleware.
+ */
+
+/**
  * Activities Controller
  * HTTP handlers for activity endpoints
  */
@@ -17,8 +25,10 @@ const {
 
 class ActivitiesController {
     /**
-     * GET /api/v1/courses/:courseId/activities
-     * Get activities by course
+     * @DESC: Retrieve all activities for a specific course
+     * @Params: courseId (path), page (query), limit (query)
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getActivitiesByCourse(req, res, next) {
         try {
@@ -47,8 +57,10 @@ class ActivitiesController {
     }
 
     /**
-     * GET /api/v1/courses/:courseId/activities/published
-     * Get published activities by course
+     * @DESC: Retrieve only published activities for a course
+     * @Params: courseId (path), page (query), limit (query)
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getPublishedActivities(req, res, next) {
         try {
@@ -77,8 +89,10 @@ class ActivitiesController {
     }
 
     /**
-     * GET /api/v1/activities/:id
-     * Get activity by ID
+     * @DESC: Retrieve a single activity by ID
+     * @Params: id (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getActivity(req, res, next) {
         try {
@@ -96,22 +110,39 @@ class ActivitiesController {
     }
 
     /**
-     * POST /api/v1/activities
-     * Create new activity (Lecturer only)
+     * @DESC: Create a new learning activity
+     * @Params: N/A
+     * @Body: { courseId, title, description, type, startDate, endDate, isPublished }
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async createActivity(req, res, next) {
         try {
             const validated = LearningActivityCreateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const activity = await activitiesService.createActivity(validated, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile. Contact admin to set up lecturer access.'
+                });
+            }
+
+            const activity = await activitiesService.createActivity(validated, lecturerProfile.id);
 
             res.status(statusCodes.CREATED).json({
                 success: true,
@@ -124,23 +155,40 @@ class ActivitiesController {
     }
 
     /**
-     * PUT /api/v1/activities/:id
-     * Update activity (Lecturer only)
+     * @DESC: Update an existing learning activity
+     * @Params: id (path) - Activity CUID/UUID
+     * @Body: { title?, description?, type?, startDate?, endDate?, isPublished? } - all optional
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async updateActivity(req, res, next) {
         try {
             const { id } = req.params;
             const validated = LearningActivityUpdateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const activity = await activitiesService.updateActivity(id, validated, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const activity = await activitiesService.updateActivity(id, validated, lecturerProfile.id);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -153,22 +201,39 @@ class ActivitiesController {
     }
 
     /**
-     * DELETE /api/v1/activities/:id
-     * Delete activity (Lecturer only)
+     * @DESC: Delete an activity (soft delete)
+     * @Params: id (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async deleteActivity(req, res, next) {
         try {
             const { id } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            await activitiesService.deleteActivity(id, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            await activitiesService.deleteActivity(id, lecturerProfile.id);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -180,22 +245,39 @@ class ActivitiesController {
     }
 
     /**
-     * POST /api/v1/activities/:id/publish
-     * Publish activity (Lecturer only)
+     * @DESC: Publish an activity (make it visible to students)
+     * @Params: id (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async publishActivity(req, res, next) {
         try {
             const { id } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const activity = await activitiesService.publishActivity(id, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const activity = await activitiesService.publishActivity(id, lecturerProfile.id);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -208,22 +290,39 @@ class ActivitiesController {
     }
 
     /**
-     * POST /api/v1/activities/:id/unpublish
-     * Unpublish activity (Lecturer only)
+     * @DESC: Unpublish an activity (hide from students)
+     * @Params: id (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async unpublishActivity(req, res, next) {
         try {
             const { id } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Lecturer profile not found'
+                    message: 'Not authenticated'
                 });
             }
 
-            const activity = await activitiesService.unpublishActivity(id, lecturerId);
+            // Fetch lecturer profile using user ID
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: 'User does not have a lecturer profile'
+                });
+            }
+
+            const activity = await activitiesService.unpublishActivity(id, lecturerProfile.id);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -236,8 +335,10 @@ class ActivitiesController {
     }
 
     /**
-     * GET /api/v1/activities/:id/stats
-     * Get activity statistics
+     * @DESC: Retrieve activity engagement and completion statistics
+     * @Params: id (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async getActivityStats(req, res, next) {
         try {
@@ -255,17 +356,31 @@ class ActivitiesController {
     }
 
     /**
-     * POST /api/v1/activities/:activityId/prerequisites
-     * Add activity prerequisite (Lecturer only)
+     * @DESC: Add a prerequisite activity to an activity
+     * @Params: activityId (path) - Activity CUID/UUID
+     * @Body: { prerequisiteActivityId, isRequired }
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async addPrerequisite(req, res, next) {
         try {
             const { activityId } = req.params;
             const { prerequisiteActivityId } = req.body;
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
@@ -274,7 +389,8 @@ class ActivitiesController {
             const prerequisite = await activitiesService.addPrerequisite(
                 activityId,
                 prerequisiteActivityId,
-                lecturerId
+                lecturerProfile.id,
+                isAdmin
             );
 
             res.status(statusCodes.CREATED).json({
@@ -288,8 +404,10 @@ class ActivitiesController {
     }
 
     /**
-     * GET /api/v1/activities/:activityId/prerequisites
-     * Get activity prerequisites
+     * @DESC: Retrieve prerequisites for an activity
+     * @Params: activityId (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getPrerequisites(req, res, next) {
         try {
@@ -307,8 +425,10 @@ class ActivitiesController {
     }
 
     /**
-     * GET /api/v1/activities/:activityId/content
-     * Get activity content
+     * @DESC: Retrieve content items for an activity
+     * @Params: activityId (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getContent(req, res, next) {
         try {
@@ -326,8 +446,10 @@ class ActivitiesController {
     }
 
     /**
-     * POST /api/v1/activities/:activityId/content
-     * Add activity content (Lecturer only)
+     * @DESC: Add content item to an activity
+     * @Params: activityId (path) - Activity CUID/UUID
+     * @Body: { contentType, title, description, resourceUrl, order }
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async addContent(req, res, next) {
         try {
@@ -336,10 +458,22 @@ class ActivitiesController {
                 activityId,
                 ...req.body
             });
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
@@ -348,7 +482,7 @@ class ActivitiesController {
             const content = await activitiesService.addContent(activityId, {
                 content: validated.content,
                 contentType: validated.contentType
-            }, lecturerId);
+            }, lecturerProfile.id, isAdmin);
 
             res.status(statusCodes.CREATED).json({
                 success: true,
@@ -361,23 +495,37 @@ class ActivitiesController {
     }
 
     /**
-     * PUT /api/v1/activities/content/:contentId
-     * Update activity content (Lecturer only)
+     * @DESC: Update activity content item
+     * @Params: contentId (path) - Content CUID/UUID
+     * @Body: { title?, description?, resourceUrl?, order? } - all optional
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async updateContent(req, res, next) {
         try {
             const { contentId } = req.params;
             const validated = ContentActivityUpdateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
             }
 
-            const content = await activitiesService.updateContent(contentId, validated, lecturerId);
+            const content = await activitiesService.updateContent(contentId, validated, lecturerProfile.id, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -390,22 +538,36 @@ class ActivitiesController {
     }
 
     /**
-     * DELETE /api/v1/activities/content/:contentId
-     * Delete activity content (Lecturer only)
+     * @DESC: Delete activity content item
+     * @Params: contentId (path) - Content CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async deleteContent(req, res, next) {
         try {
             const { contentId } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
             }
 
-            await activitiesService.deleteContent(contentId, lecturerId);
+            await activitiesService.deleteContent(contentId, lecturerProfile.id, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -417,8 +579,10 @@ class ActivitiesController {
     }
 
     /**
-     * GET /api/v1/activities/:activityId/assignment
-     * Get activity assignment
+     * @DESC: Retrieve assignment details for an activity
+     * @Params: activityId (path) - Activity CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token required
      */
     async getAssignment(req, res, next) {
         try {
@@ -436,8 +600,10 @@ class ActivitiesController {
     }
 
     /**
-     * POST /api/v1/activities/:activityId/assignment
-     * Add activity assignment (Lecturer only)
+     * @DESC: Create assignment for an activity
+     * @Params: activityId (path) - Activity CUID/UUID
+     * @Body: { title, description, dueDate, totalPoints, submissionType }
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async addAssignment(req, res, next) {
         try {
@@ -446,10 +612,22 @@ class ActivitiesController {
                 activityId,
                 ...req.body
             });
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
@@ -459,7 +637,7 @@ class ActivitiesController {
                 instructions: validated.instructions,
                 dueDate: validated.dueDate,
                 rubric: validated.rubric
-            }, lecturerId);
+            }, lecturerProfile.id, isAdmin);
 
             res.status(statusCodes.CREATED).json({
                 success: true,
@@ -472,23 +650,37 @@ class ActivitiesController {
     }
 
     /**
-     * PUT /api/v1/activities/assignment/:assignmentId
-     * Update activity assignment (Lecturer only)
+     * @DESC: Update assignment details
+     * @Params: assignmentId (path) - Assignment CUID/UUID
+     * @Body: { title?, description?, dueDate?, totalPoints?, submissionType? } - all optional
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async updateAssignment(req, res, next) {
         try {
             const { assignmentId } = req.params;
             const validated = AssignmentUpdateDTO.parse(req.body);
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
             }
 
-            const assignment = await activitiesService.updateAssignment(assignmentId, validated, lecturerId);
+            const assignment = await activitiesService.updateAssignment(assignmentId, validated, lecturerProfile.id, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -501,22 +693,36 @@ class ActivitiesController {
     }
 
     /**
-     * DELETE /api/v1/activities/assignment/:assignmentId
-     * Delete activity assignment (Lecturer only)
+     * @DESC: Delete assignment from activity
+     * @Params: assignmentId (path) - Assignment CUID/UUID
+     * @Body: N/A
+     * @Auth: Bearer token + [lecturer, admin] role required
      */
     async deleteAssignment(req, res, next) {
         try {
             const { assignmentId } = req.params;
-            const lecturerId = req.user?.lecturerId;
+            const userId = req.user?.id;
+            const isAdmin = req.isAdmin || false;
 
-            if (!lecturerId) {
+            if (!userId) {
                 return res.status(statusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            const lecturerProfile = await prisma.lecturerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!lecturerProfile) {
+                return res.status(statusCodes.FORBIDDEN).json({
                     success: false,
                     message: 'Lecturer profile not found'
                 });
             }
 
-            await activitiesService.deleteAssignment(assignmentId, lecturerId);
+            await activitiesService.deleteAssignment(assignmentId, lecturerProfile.id, isAdmin);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -529,3 +735,4 @@ class ActivitiesController {
 }
 
 module.exports = new ActivitiesController();
+

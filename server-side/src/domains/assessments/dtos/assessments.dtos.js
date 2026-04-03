@@ -11,6 +11,8 @@ const { z } = require('zod');
 
 const ExamCreateDTO = z.object({
     activityId: z.union([z.string().cuid(), z.string().uuid()]),
+    title: z.string().min(1).optional(),
+    description: z.string().optional(),
     totalQuestions: z.number().int().min(1),
     passingScore: z.number().int().min(0).max(100).optional(),
     timeLimit: z.number().int().min(1).optional(),
@@ -18,6 +20,8 @@ const ExamCreateDTO = z.object({
 });
 
 const ExamUpdateDTO = z.object({
+    title: z.string().min(1).optional(),
+    description: z.string().optional(),
     totalQuestions: z.number().int().min(1).optional(),
     passingScore: z.number().int().min(0).max(100).optional(),
     timeLimit: z.number().int().min(1).optional(),

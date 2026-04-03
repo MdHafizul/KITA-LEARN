@@ -1,11 +1,19 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Route file maps HTTP verbs and URLs to controller handlers with validation and middleware chain.
+ * Params: Document all path/query params in each endpoint comment and validate with DTO/Zod schema.
+ * Body: Document request payload schema for POST/PUT/PATCH endpoints and apply validateBody middleware.
+ * Auth Headers: Declare auth requirement per endpoint (Public or Authorization: Bearer <token>) and required roles.
+ */
+
+/**
  * Enrollment Routes
  * HTTP routes for enrollment endpoints
  */
 
 const express = require('express');
 const { validateBody, validateParams } = require('../../../middleware/validation.middleware');
-const { authMiddleware, requireRole } = require('../../../middleware/auth.middleware');
+const { authMiddleware, adminBypass, authorizeLecturer, authorizeStudent, requireRole } = require('../../../middleware/auth.middleware');
 const enrollmentController = require('../controllers/enrollment.controller');
 const {
     EnrollmentCreateDTO,
@@ -32,6 +40,12 @@ const CourseIdDTO = z.object({
  * GET /api/v1/enrollments/:id
  * Get single enrollment by ID (public - any authenticated user)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.get(
     '/:id',
     authMiddleware,
@@ -42,6 +56,12 @@ enrollmentRoutes.get(
 /**
  * PUT /api/v1/enrollments/:id
  * Update enrollment status or progress (student/instructor/admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 enrollmentRoutes.put(
     '/:id',
@@ -55,6 +75,12 @@ enrollmentRoutes.put(
  * PATCH /api/v1/enrollments/:id/progress
  * Update enrollment progress (system/service)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.patch(
     '/:id/progress',
     authMiddleware,
@@ -66,10 +92,17 @@ enrollmentRoutes.patch(
  * PATCH /api/v1/enrollments/:id/suspend
  * Suspend enrollment (instructor/admin only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.patch(
     '/:id/suspend',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(EnrollmentIdDTO),
     enrollmentController.suspendEnrollment
 );
@@ -77,6 +110,12 @@ enrollmentRoutes.patch(
 /**
  * PATCH /api/v1/enrollments/:id/complete
  * Mark enrollment as completed (student/instructor/admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 enrollmentRoutes.patch(
     '/:id/complete',
@@ -89,6 +128,12 @@ enrollmentRoutes.patch(
  * PATCH /api/v1/enrollments/:id/drop
  * Drop enrollment (student/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.patch(
     '/:id/drop',
     authMiddleware,
@@ -98,12 +143,19 @@ enrollmentRoutes.patch(
 
 /**
  * DELETE /api/v1/enrollments/:id
- * Delete enrollment (instructor/admin only)
+ * Delete enrollment (Lecturer/Admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 enrollmentRoutes.delete(
     '/:id',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(EnrollmentIdDTO),
     enrollmentController.deleteEnrollment
 );
@@ -116,6 +168,12 @@ enrollmentRoutes.delete(
  * GET /api/v1/me/enrollments
  * Get current user's enrollments (authenticated user)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.get(
     '/courses/my-enrollments',
     authMiddleware,
@@ -126,10 +184,17 @@ enrollmentRoutes.get(
  * POST /api/v1/enrollments
  * Enroll in a course (student/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.post(
     '/',
     authMiddleware,
-    requireRole(['STUDENT', 'ADMIN']),
+    adminBypass,
+    authorizeStudent,
     validateBody(EnrollmentCreateDTO),
     enrollmentController.enrollUser
 );
@@ -137,6 +202,12 @@ enrollmentRoutes.post(
 /**
  * GET /api/v1/me/enrollments/count
  * Get current user's active enrollment count
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 enrollmentRoutes.get(
     '/me/enrollments/count',
@@ -148,6 +219,12 @@ enrollmentRoutes.get(
  * GET /api/v1/enrollments/check
  * Check if current user is enrolled in a course
  * Query: courseId
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 enrollmentRoutes.get(
     '/check/:courseId',
@@ -163,10 +240,17 @@ enrollmentRoutes.get(
  * GET /api/v1/courses/:courseId/enrollments
  * Get all enrollments for a course (instructor/admin only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.get(
     '/course/:courseId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(CourseIdDTO),
     enrollmentController.getEnrollmentsByCourse
 );
@@ -175,10 +259,17 @@ enrollmentRoutes.get(
  * POST /api/v1/courses/:courseId/enrollments/bulk
  * Bulk enroll students in a course (instructor/admin only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.post(
     '/course/:courseId/bulk',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(CourseIdDTO),
     validateBody(BulkEnrollmentDTO),
     enrollmentController.bulkEnroll
@@ -188,10 +279,17 @@ enrollmentRoutes.post(
  * GET /api/v1/courses/:courseId/enrollments/stats
  * Get enrollment statistics for a course (instructor/admin only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.get(
     '/course/:courseId/stats',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(CourseIdDTO),
     enrollmentController.getCourseStats
 );
@@ -205,6 +303,12 @@ enrollmentRoutes.get(
  * Get all enrollments with filters (admin only)
  * Query: courseId, userId, status, page, limit
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 enrollmentRoutes.get(
     '/',
     authMiddleware,
@@ -213,3 +317,5 @@ enrollmentRoutes.get(
 );
 
 module.exports = enrollmentRoutes;
+
+

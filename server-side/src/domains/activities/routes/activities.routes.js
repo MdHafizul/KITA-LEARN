@@ -1,11 +1,19 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Route file maps HTTP verbs and URLs to controller handlers with validation and middleware chain.
+ * Params: Document all path/query params in each endpoint comment and validate with DTO/Zod schema.
+ * Body: Document request payload schema for POST/PUT/PATCH endpoints and apply validateBody middleware.
+ * Auth Headers: Declare auth requirement per endpoint (Public or Authorization: Bearer <token>) and required roles.
+ */
+
+/**
  * Activities Routes
  * HTTP routes for activity endpoints
  */
 
 const express = require('express');
 const { validateBody, validateParams } = require('../../../middleware/validation.middleware');
-const { authMiddleware, requireRole } = require('../../../middleware/auth.middleware');
+const { authMiddleware, adminBypass, authorizeLecturer, authorizeStudent } = require('../../../middleware/auth.middleware');
 const activitiesController = require('../controllers/activities.controller');
 const {
     LearningActivityCreateDTO,
@@ -44,6 +52,12 @@ const CourseIdDTO = z.object({
  * GET /api/v1/courses/:courseId/activities
  * Get activities by course
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.get(
     '/course/:courseId',
     validateParams(CourseIdDTO),
@@ -53,6 +67,12 @@ activitiesRoutes.get(
 /**
  * GET /api/v1/courses/:courseId/activities/published
  * Get published activities by course
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 activitiesRoutes.get(
     '/course/:courseId/published',
@@ -64,10 +84,17 @@ activitiesRoutes.get(
  * POST /api/v1/activities
  * Create new activity (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.post(
     '/',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateBody(LearningActivityCreateDTO),
     activitiesController.createActivity
 );
@@ -75,6 +102,12 @@ activitiesRoutes.post(
 /**
  * GET /api/v1/activities/:id
  * Get activity by ID
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 activitiesRoutes.get(
     '/:id',
@@ -86,10 +119,17 @@ activitiesRoutes.get(
  * PUT /api/v1/activities/:id
  * Update activity (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.put(
     '/:id',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     validateBody(LearningActivityUpdateDTO),
     activitiesController.updateActivity
@@ -99,10 +139,17 @@ activitiesRoutes.put(
  * POST /api/v1/activities/:id/publish
  * Publish activity (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.post(
     '/:id/publish',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     activitiesController.publishActivity
 );
@@ -111,22 +158,36 @@ activitiesRoutes.post(
  * POST /api/v1/activities/:id/unpublish
  * Unpublish activity (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.post(
     '/:id/unpublish',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     activitiesController.unpublishActivity
 );
 
 /**
  * DELETE /api/v1/activities/:id
- * Delete activity (Lecturer only)
+ * Delete activity (Lecturer/Admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 activitiesRoutes.delete(
     '/:id',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     activitiesController.deleteActivity
 );
@@ -134,6 +195,12 @@ activitiesRoutes.delete(
 /**
  * GET /api/v1/activities/:id/stats
  * Get activity statistics
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 activitiesRoutes.get(
     '/:id/stats',
@@ -145,6 +212,12 @@ activitiesRoutes.get(
  * GET /api/v1/activities/:activityId/prerequisites
  * Get activity prerequisites
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.get(
     '/:activityId/prerequisites',
     validateParams(ActivityIdParamDTO),
@@ -155,10 +228,17 @@ activitiesRoutes.get(
  * POST /api/v1/activities/:activityId/prerequisites
  * Add activity prerequisite (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.post(
     '/:activityId/prerequisites',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdParamDTO),
     validateBody(ActivityPrerequisiteCreateDTO),
     activitiesController.addPrerequisite
@@ -167,6 +247,12 @@ activitiesRoutes.post(
 /**
  * GET /api/v1/activities/:activityId/content
  * Get activity content
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 activitiesRoutes.get(
     '/:activityId/content',
@@ -178,10 +264,17 @@ activitiesRoutes.get(
  * POST /api/v1/activities/:activityId/content
  * Add activity content (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.post(
     '/:activityId/content',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdParamDTO),
     validateBody(ContentActivityCreateDTO),
     activitiesController.addContent
@@ -191,10 +284,17 @@ activitiesRoutes.post(
  * PUT /api/v1/activities/content/:contentId
  * Update activity content (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.put(
     '/content/:contentId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ContentIdDTO),
     validateBody(ContentActivityUpdateDTO),
     activitiesController.updateContent
@@ -204,10 +304,17 @@ activitiesRoutes.put(
  * DELETE /api/v1/activities/content/:contentId
  * Delete activity content (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.delete(
     '/content/:contentId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ContentIdDTO),
     activitiesController.deleteContent
 );
@@ -215,6 +322,12 @@ activitiesRoutes.delete(
 /**
  * GET /api/v1/activities/:activityId/assignment
  * Get activity assignment
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 activitiesRoutes.get(
     '/:activityId/assignment',
@@ -226,10 +339,17 @@ activitiesRoutes.get(
  * POST /api/v1/activities/:activityId/assignment
  * Add activity assignment (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.post(
     '/:activityId/assignment',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdParamDTO),
     validateBody(AssignmentCreateDTO),
     activitiesController.addAssignment
@@ -239,10 +359,17 @@ activitiesRoutes.post(
  * PUT /api/v1/activities/assignment/:assignmentId
  * Update activity assignment (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.put(
     '/assignment/:assignmentId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(AssignmentIdDTO),
     validateBody(AssignmentUpdateDTO),
     activitiesController.updateAssignment
@@ -252,12 +379,21 @@ activitiesRoutes.put(
  * DELETE /api/v1/activities/assignment/:assignmentId
  * Delete activity assignment (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 activitiesRoutes.delete(
     '/assignment/:assignmentId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(AssignmentIdDTO),
     activitiesController.deleteAssignment
 );
 
 module.exports = activitiesRoutes;
+
+

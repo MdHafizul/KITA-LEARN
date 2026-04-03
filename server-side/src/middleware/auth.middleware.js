@@ -101,9 +101,117 @@ const optionalAuth = (req, res, next) => {
   }
 };
 
+/**
+ * Check if user is ADMIN (for admin-only operations)
+ * Must be used AFTER authMiddleware
+ */
+const isAdmin = () => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(statusCodes.UNAUTHORIZED).json({
+        success: false,
+        error: 'Not authenticated',
+        code: 'UNAUTHORIZED'
+      });
+    }
+
+    const userRole = req.user.role?.toUpperCase();
+
+    if (userRole !== 'ADMIN') {
+      return res.status(statusCodes.FORBIDDEN).json({
+        success: false,
+        error: 'Admin access required',
+        code: 'FORBIDDEN'
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Admin Bypass - Sets isAdmin flag on request object without blocking
+ * Used in Global Admin Bypass RBAC pattern to allow admins to bypass role checks
+ * Must be used AFTER authMiddleware
+ */
+const adminBypass = (req, res, next) => {
+  if (!req.user) {
+    return res.status(statusCodes.UNAUTHORIZED).json({
+      success: false,
+      error: 'Not authenticated',
+      code: 'UNAUTHORIZED'
+    });
+  }
+
+  // Set isAdmin flag on request for service layer to use
+  req.isAdmin = req.user.role?.toUpperCase() === 'ADMIN';
+
+  next();
+};
+
+/**
+ * Authorize Lecturer - Verifies user is LECTURER or ADMIN (via adminBypass)
+ * Used in Global Admin Bypass RBAC pattern
+ * Must be used AFTER adminBypass middleware
+ */
+const authorizeLecturer = (req, res, next) => {
+  if (!req.user) {
+    return res.status(statusCodes.UNAUTHORIZED).json({
+      success: false,
+      error: 'Not authenticated',
+      code: 'UNAUTHORIZED'
+    });
+  }
+
+  const userRole = req.user.role?.toUpperCase();
+
+  // Allow if user is admin (bypass already set) OR is lecturer
+  if (userRole === 'ADMIN' || userRole === 'LECTURER') {
+    return next();
+  }
+
+  return res.status(statusCodes.FORBIDDEN).json({
+    success: false,
+    error: 'Lecturer or Admin access required',
+    code: 'FORBIDDEN'
+  });
+};
+
+/**
+ * Authorize Student - Verifies user is STUDENT or ADMIN (via adminBypass)
+ * Used in Global Admin Bypass RBAC pattern
+ * Must be used AFTER adminBypass middleware
+ */
+const authorizeStudent = (req, res, next) => {
+  if (!req.user) {
+    return res.status(statusCodes.UNAUTHORIZED).json({
+      success: false,
+      error: 'Not authenticated',
+      code: 'UNAUTHORIZED'
+    });
+  }
+
+  const userRole = req.user.role?.toUpperCase();
+
+  // Allow if user is admin (bypass already set) OR is student
+  if (userRole === 'ADMIN' || userRole === 'STUDENT') {
+    return next();
+  }
+
+  return res.status(statusCodes.FORBIDDEN).json({
+    success: false,
+    error: 'Student or Admin access required',
+    code: 'FORBIDDEN'
+  });
+};
+
 module.exports = {
   authMiddleware,
   requireRole,
   optionalAuth,
+  isAdmin,
+  adminBypass,
+  authorizeLecturer,
+  authorizeStudent,
   extractToken
 };

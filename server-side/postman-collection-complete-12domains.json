@@ -1,0 +1,1701 @@
+{
+  "info": {
+    "_postman_id": "kitalearn-lms-complete-12domains",
+    "name": "KitaLearn LMS API - Complete 12 Domains",
+    "description": "Complete Production-Ready API Collection for KitaLearn Learning Management System\n\nAll 12 Domains: Lecturer, Assessments, Courses, Activities, Enrollment, Submissions, Grades, Announcements, Classes, Identity, SLT Tracking, Progression & Certificates\n\n**Authentication**: JWT Bearer Token (set after login)\n**Base URL**: {{base_url}}\n**Test Users**:\n- Admin: admin@lms.test / admin123456\n- Lecturer: lecturer@lms.test / lecturer123456\n- Student: student@lms.test / student123456",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication & System",
+      "item": [
+        {
+          "name": "Login - Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('auth_token', jsonData.data.token);",
+                  "  pm.environment.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@lms.test\",\n  \"password\": \"admin123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Lecturer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('auth_token', jsonData.data.token);",
+                  "  pm.environment.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lecturer@lms.test\",\n  \"password\": \"lecturer123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('auth_token', jsonData.data.token);",
+                  "  pm.environment.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@lms.test\",\n  \"password\": \"student123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"phone_number\": \"+1-555-0001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👨‍🏫 Lecturer Domain",
+      "item": [
+        {
+          "name": "Get All Lecturers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/lecturers?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lecturers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Lecturer by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/lecturers/{lecturer_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lecturers", "{lecturer_id}"]
+            }
+          }
+        },
+        {
+          "name": "Create Lecturer Profile [Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"user_cuid_here\",\n  \"department\": \"Computer Science\",\n  \"qualification\": \"Ph.D. Computer Science\",\n  \"yearsExperience\": 8,\n  \"specialization\": \"Web Development\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/lecturers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lecturers"]
+            }
+          }
+        },
+        {
+          "name": "Update Lecturer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department\": \"Information Technology\",\n  \"qualification\": \"Ph.D. Computer Science\",\n  \"yearsExperience\": 9,\n  \"specialization\": \"Cloud Computing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/lecturers/{lecturer_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lecturers", "{lecturer_id}"]
+            }
+          }
+        },
+        {
+          "name": "Get Lecturer Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/lecturers/{lecturer_id}/courses?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lecturers", "{lecturer_id}", "courses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Lecturer Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/lecturers/{lecturer_id}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lecturers", "{lecturer_id}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Courses Domain",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Course by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/{course_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "{course_id}"]
+            }
+          }
+        },
+        {
+          "name": "Create Course [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced JavaScript & React\",\n  \"description\": \"Master modern web development with JavaScript and React.js\",\n  \"creditHours\": 4,\n  \"durationWeeks\": 12,\n  \"difficultyLevel\": \"ADVANCED\",\n  \"category\": \"Programming\",\n  \"capacity\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Update Course [Lecturer/Admin]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced JavaScript, React & Node.js\",\n  \"description\": \"Master full-stack web development\",\n  \"durationWeeks\": 14,\n  \"capacity\": 60\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/{course_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "{course_id}"]
+            }
+          }
+        },
+        {
+          "name": "Publish Course [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/{course_id}/publish",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "{course_id}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Delete Course [Admin]",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses/{course_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses", "{course_id}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎯 Activities Domain",
+      "item": [
+        {
+          "name": "Get Activities by Course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/course/{course_id}?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "course", "{course_id}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Published Activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/course/{course_id}/published?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "course", "{course_id}", "published"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Activity by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/{activity_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "{activity_id}"]
+            }
+          }
+        },
+        {
+          "name": "Create Activity [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"course_cuid_here\",\n  \"title\": \"Module 1: JavaScript Fundamentals\",\n  \"description\": \"Learn JavaScript basics, variables, functions, and DOM manipulation\",\n  \"type\": \"CONTENT\",\n  \"startDate\": \"2024-01-15T09:00:00Z\",\n  \"endDate\": \"2024-02-15T17:00:00Z\",\n  \"isPublished\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities"]
+            }
+          }
+        },
+        {
+          "name": "Update Activity [Lecturer/Admin]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Module 1: JavaScript Fundamentals & Advanced\",\n  \"description\": \"Learn complete JavaScript programming\",\n  \"endDate\": \"2024-02-20T17:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/{activity_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "{activity_id}"]
+            }
+          }
+        },
+        {
+          "name": "Publish Activity [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/{activity_id}/publish",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "{activity_id}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Get Activity Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/activities/{activity_id}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "activities", "{activity_id}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Assessments Domain",
+      "item": [
+        {
+          "name": "Get All Exams",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Exam by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/{exam_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "{exam_id}"]
+            }
+          }
+        },
+        {
+          "name": "Create Exam [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityId\": \"activity_cuid_here\",\n  \"title\": \"Midterm Exam - JavaScript Fundamentals\",\n  \"description\": \"Comprehensive exam covering all JavaScript basics\",\n  \"totalQuestions\": 50,\n  \"timeLimit\": 120,\n  \"passingScore\": 70,\n  \"shuffleQuestions\": true,\n  \"startDate\": \"2024-02-01T10:00:00Z\",\n  \"endDate\": \"2024-02-01T12:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams"]
+            }
+          }
+        },
+        {
+          "name": "Start Exam Attempt [Student]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/{exam_id}/start",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "{exam_id}", "start"]
+            }
+          }
+        },
+        {
+          "name": "Submit Exam Answers [Student]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attemptId\": \"attempt_cuid_here\",\n  \"answers\": [\n    {\n      \"questionId\": \"question_1\",\n      \"selectedOption\": \"A\"\n    },\n    {\n      \"questionId\": \"question_2\",\n      \"selectedOption\": \"B\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/{exam_id}/submit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "{exam_id}", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Get Exam Results [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exams/{exam_id}/results",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exams", "{exam_id}", "results"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Submissions Domain",
+      "item": [
+        {
+          "name": "Get All Submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Submit Assignment [Student]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": \"assignment_cuid_here\",\n  \"submissionText\": \"My assignment solution...\",\n  \"submissionUrl\": \"https://github.com/user/assignment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions"]
+            }
+          }
+        },
+        {
+          "name": "Get Submission by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions/{submission_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions", "{submission_id}"]
+            }
+          }
+        },
+        {
+          "name": "Grade Submission [Lecturer/Admin]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marks\": 85,\n  \"feedback\": \"Excellent work! Great understanding of concepts.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions/{submission_id}/grade",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions", "{submission_id}", "grade"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Grades Domain",
+      "item": [
+        {
+          "name": "Get All Grades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grades?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Grades by Course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grades/course/{course_id}?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grades", "course", "{course_id}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Record Grade [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enrollmentId\": \"enrollment_cuid_here\",\n  \"activityId\": \"activity_cuid_here\",\n  \"score\": 85,\n  \"maxScore\": 100,\n  \"gradeType\": \"ASSESSMENT\",\n  \"feedback\": \"Good performance!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/grades",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grades"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Grades in Course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grades/student/{student_id}/course/{course_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grades", "student", "{student_id}", "course", "{course_id}"]
+            }
+          }
+        },
+        {
+          "name": "Get Course Grade Statistics [Lecturer/Admin]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/grades/course/{course_id}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "grades", "course", "{course_id}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📣 Announcements Domain",
+      "item": [
+        {
+          "name": "Get All Announcements",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/announcements?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "announcements"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Announcements by Course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/announcements/course/{course_id}?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "announcements", "course", "{course_id}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Announcement by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/announcements/{announcement_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "announcements", "{announcement_id}"]
+            }
+          }
+        },
+        {
+          "name": "Create Announcement [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"course_cuid_here\",\n  \"title\": \"Important: Assignment Deadline Extended\",\n  \"message\": \"The JavaScript assignment deadline has been extended to next Friday.\",\n  \"priority\": \"HIGH\",\n  \"announcementType\": \"GENERAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/announcements",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "Update Announcement [Lecturer/Admin]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"URGENT: Assignment Deadline Changed\",\n  \"message\": \"The JavaScript assignment deadline has been moved to March 1st.\",\n  \"priority\": \"CRITICAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/announcements/{announcement_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "announcements", "{announcement_id}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Announcement [Lecturer/Admin]",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/announcements/{announcement_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "announcements", "{announcement_id}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏫 Classes Domain",
+      "item": [
+        {
+          "name": "Get All Classes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/classes?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "classes"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Class by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/classes/{class_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "classes", "{class_id}"]
+            }
+          }
+        },
+        {
+          "name": "Create Class [Lecturer/Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"course_cuid_here\",\n  \"name\": \"JavaScript - Section A\",\n  \"description\": \"Morning session for JavaScript fundamentals\",\n  \"capacity\": 40,\n  \"schedule\": \"MWF 09:00-10:30\",\n  \"room\": \"Building A, Room 101\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/classes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "classes"]
+            }
+          }
+        },
+        {
+          "name": "Get Class Enrollments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/classes/{class_id}/enrollments?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "classes", "{class_id}", "enrollments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Class Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/classes/{class_id}/sessions?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "classes", "{class_id}", "sessions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Enrollment Domain",
+      "item": [
+        {
+          "name": "Get All Enrollments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Enrollments [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/me?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "me"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enroll in Course [Student]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"course_cuid_here\",\n  \"classId\": \"class_cuid_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments"]
+            }
+          }
+        },
+        {
+          "name": "Get Enrollment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/{enrollment_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "{enrollment_id}"]
+            }
+          }
+        },
+        {
+          "name": "Get Enrollment Progress [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/{enrollment_id}/progress",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "{enrollment_id}", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Unenroll from Course [Student]",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/{enrollment_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "{enrollment_id}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📈 SLT Tracking Domain",
+      "item": [
+        {
+          "name": "Get Activity Tracking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tracking/activities?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tracking", "activities"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Activity Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"student_cuid_here\",\n  \"activityId\": \"activity_cuid_here\",\n  \"enrollmentId\": \"enrollment_cuid_here\",\n  \"status\": \"STARTED\",\n  \"accessTime\": \"2024-01-15T10:00:00Z\",\n  \"duration\": 45\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tracking/activities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tracking", "activities"]
+            }
+          }
+        },
+        {
+          "name": "Get Student SLT Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tracking/summary/{student_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tracking", "summary", "{student_id}"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Learning Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tracking/metrics/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tracking", "metrics", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Course Analytics [Lecturer/Admin]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tracking/analytics/course/{course_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tracking", "analytics", "course", "{course_id}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎓 Progression & Certificates Domain",
+      "item": [
+        {
+          "name": "Get My Progression [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/progression/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "progression", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Progression Summary [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/progression/me/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "progression", "me", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Award Points [Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"student_cuid_here\",\n  \"points\": 50,\n  \"reason\": \"Completed challenging assignment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/progression/{user_id}/award-points",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "progression", "{user_id}", "award-points"]
+            }
+          }
+        },
+        {
+          "name": "Get Progression Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/progression/leaderboard?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "progression", "leaderboard"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Certificates [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/me?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "me"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Issue Certificate [Admin]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"student_cuid_here\",\n  \"courseId\": \"course_cuid_here\",\n  \"certificateNumber\": \"CERT-2024-001\",\n  \"issuerName\": \"KitaLearn Academy\",\n  \"issuerSignature\": \"Signature URL or path\",\n  \"expiryDate\": \"2026-01-15T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Verify Certificate [Public]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificateNumber\": \"CERT-2024-001\",\n  \"verificationCode\": \"verification_code_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Get Certificate by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/{certificate_id}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "{certificate_id}"]
+            }
+          }
+        },
+        {
+          "name": "Get My Achievements [Student]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/progress/me/achievements",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "progress", "me", "achievements"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

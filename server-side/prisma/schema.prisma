@@ -365,6 +365,8 @@ model Assignment {
 model Exam {
   id                  String    @id @default(cuid())
   activityId          String    @unique
+  title               String?
+  description         String?
   examType            String    @default("QUIZ") // QUIZ, MIDTERM, FINAL, PLACEMENT
   totalQuestions      Int
   timeLimit           Int       // in minutes

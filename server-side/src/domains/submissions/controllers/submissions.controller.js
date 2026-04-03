@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Controller handlers receive validated HTTP input and return consistent JSON responses.
+ * Params: Read from req.params and req.query; validate and sanitize before passing to services.
+ * Body: Read from req.body using DTO/schema validation before business logic execution.
+ * Auth Headers: Expect Authorization: Bearer <token> when route is protected; enforce role checks in routes/middleware.
+ */
+
+/**
  * Submissions Controller
  * HTTP handlers for submission endpoints
  */
@@ -17,6 +25,12 @@ class SubmissionsController {
      * GET /api/v1/submissions/:id
      * Get submission by ID
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getSubmission(req, res, next) {
         try {
             const { id } = req.params;
@@ -35,17 +49,23 @@ class SubmissionsController {
      * GET /api/v1/activities/:activityId/submissions
      * Get submissions for activity (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getSubmissionsByActivity(req, res, next) {
         try {
             const { activityId } = req.params;
             const { page = 1, limit = 10 } = req.query;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
             const result = await submissionsService.getSubmissionsByActivity(
                 activityId,
                 { page: parseInt(page), limit: parseInt(limit) },
-                userId,
-                role
+                actor,
+                req.isAdminBypass
             );
 
             res.status(statusCodes.OK).json({
@@ -66,6 +86,12 @@ class SubmissionsController {
      * GET /api/v1/me/submissions
      * Get current user's submissions
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getMySubmissions(req, res, next) {
         try {
             const { page = 1, limit = 10 } = req.query;
@@ -94,6 +120,12 @@ class SubmissionsController {
      * GET /api/v1/submissions
      * Get submissions with filters (admin only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async listSubmissions(req, res, next) {
         try {
             const { activityId, userId, status, isLate, page = 1, limit = 10 } = req.query;
@@ -127,6 +159,12 @@ class SubmissionsController {
      * POST /api/v1/activities/:activityId/submissions
      * Create/open submission for activity
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async createSubmission(req, res, next) {
         try {
             const { activityId } = req.params;
@@ -148,13 +186,19 @@ class SubmissionsController {
      * PUT /api/v1/submissions/:id
      * Update submission draft
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async updateSubmission(req, res, next) {
         try {
             const { id } = req.params;
             const validated = SubmissionUpdateDTO.parse(req.body);
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const submission = await submissionsService.updateSubmission(id, validated, userId, role);
+            const submission = await submissionsService.updateSubmission(id, validated, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -170,12 +214,18 @@ class SubmissionsController {
      * POST /api/v1/submissions/:id/submit
      * Submit assignment
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async submitAssignment(req, res, next) {
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const submission = await submissionsService.submitAssignment(id, userId, role);
+            const submission = await submissionsService.submitAssignment(id, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -191,18 +241,24 @@ class SubmissionsController {
      * POST /api/v1/submissions/:id/grade
      * Grade submission (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async gradeSubmission(req, res, next) {
         try {
             const { id } = req.params;
             const validated = SubmissionGradeDTO.parse(req.body);
-            const { userId, role } = req.user;
+            const actor = req.user;
 
             const submission = await submissionsService.gradeSubmission(
                 id,
                 validated.score,
                 validated.feedback,
-                userId,
-                role
+                actor,
+                req.isAdminBypass
             );
 
             res.status(statusCodes.OK).json({
@@ -219,6 +275,12 @@ class SubmissionsController {
      * POST /api/v1/activities/:activityId/submissions/batch-grade
      * Grade multiple submissions (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async batchGradeSubmissions(req, res, next) {
         try {
             const { activityId } = req.params;
@@ -226,13 +288,13 @@ class SubmissionsController {
                 activityId,
                 grades: req.body.grades
             });
-            const { userId, role } = req.user;
+            const actor = req.user;
 
             const result = await submissionsService.batchGrade(
                 validated.activityId,
                 validated.grades,
-                userId,
-                role
+                actor,
+                req.isAdminBypass
             );
 
             res.status(statusCodes.OK).json({
@@ -249,13 +311,19 @@ class SubmissionsController {
      * POST /api/v1/submissions/:id/return
      * Return submission for revision (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async returnForRevision(req, res, next) {
         try {
             const { id } = req.params;
             const { feedback } = req.body;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const submission = await submissionsService.returnForRevision(id, feedback, userId, role);
+            const submission = await submissionsService.returnForRevision(id, feedback, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -271,12 +339,18 @@ class SubmissionsController {
      * DELETE /api/v1/submissions/:id
      * Delete submission
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async deleteSubmission(req, res, next) {
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            await submissionsService.deleteSubmission(id, userId, role);
+            await submissionsService.deleteSubmission(id, actor, req.isAdminBypass);
 
             res.status(statusCodes.NO_CONTENT).send();
         } catch (error) {
@@ -288,12 +362,18 @@ class SubmissionsController {
      * GET /api/v1/activities/:activityId/submissions/stats
      * Get submission statistics for activity (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getActivityStats(req, res, next) {
         try {
             const { activityId } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const stats = await submissionsService.getActivityStatistics(activityId, userId, role);
+            const stats = await submissionsService.getActivityStatistics(activityId, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -308,6 +388,12 @@ class SubmissionsController {
      * GET /api/v1/me/submissions/stats
      * Get user submission statistics
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getUserStats(req, res, next) {
         try {
             const { userId } = req.user;
@@ -327,12 +413,18 @@ class SubmissionsController {
      * GET /api/v1/activities/:activityId/submissions/late
      * Get late submissions (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getLateSubmissions(req, res, next) {
         try {
             const { activityId } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const submissions = await submissionsService.getLateSubmissions(activityId, userId, role);
+            const submissions = await submissionsService.getLateSubmissions(activityId, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -347,12 +439,18 @@ class SubmissionsController {
      * GET /api/v1/activities/:activityId/submissions/ungraded
      * Get ungraded submissions (instructor only)
      */
+/**
+ * Desc: Controller function orchestrates request handling and JSON response mapping.
+ * Params: Read required path/query values from req.params and req.query.
+ * Body: Read request payload from req.body and validate via DTO/Zod before service call.
+ * Auth Headers: Use Authorization: Bearer <token> on protected routes; role checks are enforced in middleware.
+ */
     async getUngradedSubmissions(req, res, next) {
         try {
             const { activityId } = req.params;
-            const { userId, role } = req.user;
+            const actor = req.user;
 
-            const submissions = await submissionsService.getUngradedSubmissions(activityId, userId, role);
+            const submissions = await submissionsService.getUngradedSubmissions(activityId, actor, req.isAdminBypass);
 
             res.status(statusCodes.OK).json({
                 success: true,
@@ -365,3 +463,5 @@ class SubmissionsController {
 }
 
 module.exports = new SubmissionsController();
+
+

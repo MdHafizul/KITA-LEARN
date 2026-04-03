@@ -1,11 +1,19 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Route file maps HTTP verbs and URLs to controller handlers with validation and middleware chain.
+ * Params: Document all path/query params in each endpoint comment and validate with DTO/Zod schema.
+ * Body: Document request payload schema for POST/PUT/PATCH endpoints and apply validateBody middleware.
+ * Auth Headers: Declare auth requirement per endpoint (Public or Authorization: Bearer <token>) and required roles.
+ */
+
+/**
  * Submissions Routes
  * HTTP routes for submission endpoints
  */
 
 const express = require('express');
 const { validateBody, validateParams } = require('../../../middleware/validation.middleware');
-const { authMiddleware, requireRole } = require('../../../middleware/auth.middleware');
+const { authMiddleware, adminBypass, authorizeLecturer, authorizeStudent, requireRole } = require('../../../middleware/auth.middleware');
 const submissionsController = require('../controllers/submissions.controller');
 const {
     SubmissionCreateDTO,
@@ -33,6 +41,12 @@ const ActivityIdDTO = z.object({
  * GET /api/v1/submissions/:id
  * Get submission by ID
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/:id',
     authMiddleware,
@@ -43,6 +57,12 @@ submissionsRoutes.get(
 /**
  * PUT /api/v1/submissions/:id
  * Update submission draft (student/admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 submissionsRoutes.put(
     '/:id',
@@ -56,10 +76,17 @@ submissionsRoutes.put(
  * POST /api/v1/submissions/:id/submit
  * Submit assignment (student/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.post(
     '/:id/submit',
     authMiddleware,
-    requireRole(['STUDENT', 'ADMIN']),
+    adminBypass,
+    authorizeStudent,
     validateParams(SubmissionIdDTO),
     submissionsController.submitAssignment
 );
@@ -68,10 +95,17 @@ submissionsRoutes.post(
  * POST /api/v1/submissions/:id/grade
  * Grade submission (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.post(
     '/:id/grade',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(SubmissionIdDTO),
     validateBody(SubmissionGradeDTO),
     submissionsController.gradeSubmission
@@ -81,21 +115,36 @@ submissionsRoutes.post(
  * POST /api/v1/submissions/:id/return
  * Return submission for revision (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.post(
     '/:id/return',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(SubmissionIdDTO),
     submissionsController.returnForRevision
 );
 
 /**
  * DELETE /api/v1/submissions/:id
- * Delete submission (student/instructor/admin)
+ * Delete submission (Lecturer/Admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 submissionsRoutes.delete(
     '/:id',
     authMiddleware,
+    adminBypass,
+    authorizeLecturer,
     validateParams(SubmissionIdDTO),
     submissionsController.deleteSubmission
 );
@@ -108,6 +157,12 @@ submissionsRoutes.delete(
  * GET /api/v1/me/submissions
  * Get current user's submissions
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/me/submissions',
     authMiddleware,
@@ -117,6 +172,12 @@ submissionsRoutes.get(
 /**
  * GET /api/v1/me/submissions/stats
  * Get user submission statistics
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 submissionsRoutes.get(
     '/me/submissions/stats',
@@ -132,10 +193,17 @@ submissionsRoutes.get(
  * POST /api/v1/activities/:activityId/submissions
  * Create/open submission (student/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.post(
     '/activity/:activityId',
     authMiddleware,
-    requireRole(['STUDENT', 'ADMIN']),
+    adminBypass,
+    authorizeStudent,
     validateParams(ActivityIdDTO),
     submissionsController.createSubmission
 );
@@ -144,10 +212,17 @@ submissionsRoutes.post(
  * GET /api/v1/activities/:activityId/submissions
  * Get submissions for activity (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/activity/:activityId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     submissionsController.getSubmissionsByActivity
 );
@@ -156,10 +231,17 @@ submissionsRoutes.get(
  * POST /api/v1/activities/:activityId/submissions/batch-grade
  * Grade multiple submissions (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.post(
     '/activity/:activityId/batch-grade',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     validateBody(BatchGradeDTO),
     submissionsController.batchGradeSubmissions
@@ -169,10 +251,17 @@ submissionsRoutes.post(
  * GET /api/v1/activities/:activityId/submissions/stats
  * Get activity submission statistics (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/activity/:activityId/stats',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     submissionsController.getActivityStats
 );
@@ -181,10 +270,17 @@ submissionsRoutes.get(
  * GET /api/v1/activities/:activityId/submissions/late
  * Get late submissions (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/activity/:activityId/late',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     submissionsController.getLateSubmissions
 );
@@ -193,10 +289,17 @@ submissionsRoutes.get(
  * GET /api/v1/activities/:activityId/submissions/ungraded
  * Get ungraded submissions (instructor/admin)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/activity/:activityId/ungraded',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ActivityIdDTO),
     submissionsController.getUngradedSubmissions
 );
@@ -210,6 +313,12 @@ submissionsRoutes.get(
  * Get all submissions with filters (admin only)
  * Query: activityId, userId, status, isLate, page, limit
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 submissionsRoutes.get(
     '/',
     authMiddleware,
@@ -218,3 +327,5 @@ submissionsRoutes.get(
 );
 
 module.exports = submissionsRoutes;
+
+

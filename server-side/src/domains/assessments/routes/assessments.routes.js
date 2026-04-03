@@ -1,11 +1,19 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Route file maps HTTP verbs and URLs to controller handlers with validation and middleware chain.
+ * Params: Document all path/query params in each endpoint comment and validate with DTO/Zod schema.
+ * Body: Document request payload schema for POST/PUT/PATCH endpoints and apply validateBody middleware.
+ * Auth Headers: Declare auth requirement per endpoint (Public or Authorization: Bearer <token>) and required roles.
+ */
+
+/**
  * Assessments Routes
  * HTTP routes for exam endpoints
  */
 
 const express = require('express');
 const { validateBody, validateParams } = require('../../../middleware/validation.middleware');
-const { authMiddleware, requireRole } = require('../../../middleware/auth.middleware');
+const { authMiddleware, adminBypass, authorizeLecturer, authorizeStudent } = require('../../../middleware/auth.middleware');
 const assessmentsController = require('../controllers/assessments.controller');
 const {
     ExamCreateDTO,
@@ -45,17 +53,46 @@ const SchemeIdDTO = z.object({
  * POST /api/v1/exams
  * Create new exam (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.post(
     '/',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateBody(ExamCreateDTO),
     assessmentsController.createExam
 );
 
 /**
+ * GET /api/v1/exams
+ * Get all exams
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
+assessmentsRoutes.get(
+    '/',
+    assessmentsController.getAllExams
+);
+
+
+/**
  * GET /api/v1/exams/:id
  * Get exam by ID
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.get(
     '/:id',
@@ -67,10 +104,17 @@ assessmentsRoutes.get(
  * PUT /api/v1/exams/:id
  * Update exam (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.put(
     '/:id',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ExamIdDTO),
     validateBody(ExamUpdateDTO),
     assessmentsController.updateExam
@@ -78,12 +122,19 @@ assessmentsRoutes.put(
 
 /**
  * DELETE /api/v1/exams/:id
- * Delete exam (Lecturer only)
+ * Delete exam (Lecturer/Admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.delete(
     '/:id',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ExamIdDTO),
     assessmentsController.deleteExam
 );
@@ -91,6 +142,12 @@ assessmentsRoutes.delete(
 /**
  * GET /api/v1/exams/:id/stats
  * Get exam statistics
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.get(
     '/:id/stats',
@@ -102,10 +159,17 @@ assessmentsRoutes.get(
  * POST /api/v1/exams/:examId/questions
  * Create exam question (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.post(
     '/:examId/questions',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ExamIdParamDTO),
     validateBody(ExamQuestionCreateDTO),
     assessmentsController.createQuestion
@@ -114,6 +178,12 @@ assessmentsRoutes.post(
 /**
  * GET /api/v1/exams/:examId/questions
  * Get exam questions
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.get(
     '/:examId/questions',
@@ -125,10 +195,17 @@ assessmentsRoutes.get(
  * PUT /api/v1/exams/questions/:questionId
  * Update exam question (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.put(
     '/questions/:questionId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(QuestionIdDTO),
     validateBody(ExamQuestionUpdateDTO),
     assessmentsController.updateQuestion
@@ -136,12 +213,19 @@ assessmentsRoutes.put(
 
 /**
  * DELETE /api/v1/exams/questions/:questionId
- * Delete exam question (Lecturer only)
+ * Delete exam question (Lecturer/Admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.delete(
     '/questions/:questionId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(QuestionIdDTO),
     assessmentsController.deleteQuestion
 );
@@ -150,10 +234,17 @@ assessmentsRoutes.delete(
  * POST /api/v1/exams/:examId/start
  * Start exam attempt (Student only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.post(
     '/:examId/start',
     authMiddleware,
-    requireRole(['STUDENT']),
+    adminBypass,
+    authorizeStudent,
     validateParams(ExamIdParamDTO),
     assessmentsController.startAttempt
 );
@@ -162,10 +253,17 @@ assessmentsRoutes.post(
  * POST /api/v1/exams/:examId/submit
  * Submit exam attempt (Student only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.post(
     '/:examId/submit',
     authMiddleware,
-    requireRole(['STUDENT']),
+    adminBypass,
+    authorizeStudent,
     validateParams(ExamIdParamDTO),
     validateBody(ExamAttemptSubmitDTO),
     assessmentsController.submitAttempt
@@ -175,10 +273,17 @@ assessmentsRoutes.post(
  * GET /api/v1/exams/:examId/attempts
  * Get user attempts for exam
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.get(
     '/:examId/attempts',
     authMiddleware,
-    requireRole(['STUDENT']),
+    adminBypass,
+    authorizeStudent,
     validateParams(ExamIdParamDTO),
     assessmentsController.getUserAttempts
 );
@@ -186,6 +291,12 @@ assessmentsRoutes.get(
 /**
  * GET /api/v1/exams/attempts/:attemptId/results
  * Get attempt results
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.get(
     '/attempts/:attemptId/results',
@@ -198,10 +309,17 @@ assessmentsRoutes.get(
  * POST /api/v1/exams/:examId/grading-schemes
  * Create grading scheme (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.post(
     '/:examId/grading-schemes',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(ExamIdParamDTO),
     validateBody(GradingSchemeCreateDTO),
     assessmentsController.createGradingScheme
@@ -210,6 +328,12 @@ assessmentsRoutes.post(
 /**
  * GET /api/v1/exams/:examId/grading-schemes
  * Get grading schemes for exam
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.get(
     '/:examId/grading-schemes',
@@ -221,10 +345,17 @@ assessmentsRoutes.get(
  * PUT /api/v1/exams/grading-schemes/:schemeId
  * Update grading scheme (Lecturer only)
  */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
 assessmentsRoutes.put(
     '/grading-schemes/:schemeId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(SchemeIdDTO),
     validateBody(GradingSchemeUpdateDTO),
     assessmentsController.updateGradingScheme
@@ -232,14 +363,23 @@ assessmentsRoutes.put(
 
 /**
  * DELETE /api/v1/exams/grading-schemes/:schemeId
- * Delete grading scheme (Lecturer only)
+ * Delete grading scheme (Lecturer/Admin)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 assessmentsRoutes.delete(
     '/grading-schemes/:schemeId',
     authMiddleware,
-    requireRole(['LECTURER', 'ADMIN']),
+    adminBypass,
+    authorizeLecturer,
     validateParams(SchemeIdDTO),
     assessmentsController.deleteGradingScheme
 );
 
 module.exports = assessmentsRoutes;
+
+

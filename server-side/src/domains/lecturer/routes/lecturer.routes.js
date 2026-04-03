@@ -1,4 +1,12 @@
 /**
+ * Documentation Contract (Professional Node.js)
+ * Desc: Route file maps HTTP verbs and URLs to controller handlers with validation and middleware chain.
+ * Params: Document all path/query params in each endpoint comment and validate with DTO/Zod schema.
+ * Body: Document request payload schema for POST/PUT/PATCH endpoints and apply validateBody middleware.
+ * Auth Headers: Declare auth requirement per endpoint (Public or Authorization: Bearer <token>) and required roles.
+ */
+
+/**
  * Lecturer Routes
  * HTTP routes for lecturer endpoints
  */
@@ -21,8 +29,10 @@ const UserIdDTO = z.object({
 });
 
 /**
- * GET /api/v1/lecturers
- * Get all lecturers (public)
+ * @route GET /api/v1/lecturers
+ * @access Public
+ * @Params: page (query, default: 1), limit (query, default: 10)
+ * @Body: N/A
  */
 lecturerRoutes.get(
     '/',
@@ -30,8 +40,10 @@ lecturerRoutes.get(
 );
 
 /**
- * POST /api/v1/lecturers
- * Create lecturer profile (Admin only)
+ * @route POST /api/v1/lecturers
+ * @access Private - [admin]
+ * @Params: N/A
+ * @Body: { userId, department, qualification, yearsExperience, specialization }
  */
 lecturerRoutes.post(
     '/',
@@ -42,8 +54,10 @@ lecturerRoutes.post(
 );
 
 /**
- * GET /api/v1/lecturers/:id
- * Get lecturer by ID (public)
+ * @route GET /api/v1/lecturers/:id
+ * @access Public
+ * @Params: id (path) - Lecturer CUID/UUID
+ * @Body: N/A
  */
 lecturerRoutes.get(
     '/:id',
@@ -52,8 +66,10 @@ lecturerRoutes.get(
 );
 
 /**
- * GET /api/v1/lecturers/user/:userId
- * Get lecturer profile by user ID (public)
+ * @route GET /api/v1/lecturers/user/:userId
+ * @access Public
+ * @Params: userId (path) - User CUID/UUID
+ * @Body: N/A
  */
 lecturerRoutes.get(
     '/user/:userId',
@@ -62,8 +78,10 @@ lecturerRoutes.get(
 );
 
 /**
- * PUT /api/v1/lecturers/:id
- * Update lecturer profile (Admin/Self only)
+ * @route PUT /api/v1/lecturers/:id
+ * @access Private - [admin, lecturer]
+ * @Params: id (path) - Lecturer CUID/UUID
+ * @Body: { department?, qualification?, yearsExperience?, specialization? } - all optional
  */
 lecturerRoutes.put(
     '/:id',
@@ -74,8 +92,10 @@ lecturerRoutes.put(
 );
 
 /**
- * DELETE /api/v1/lecturers/:id
- * Delete lecturer profile (Admin only)
+ * @route DELETE /api/v1/lecturers/:id
+ * @access Private - [admin]
+ * @Params: id (path) - Lecturer CUID/UUID
+ * @Body: N/A
  */
 lecturerRoutes.delete(
     '/:id',
@@ -86,8 +106,10 @@ lecturerRoutes.delete(
 );
 
 /**
- * GET /api/v1/lecturers/:id/courses
- * Get lecturer's courses (public)
+ * @route GET /api/v1/lecturers/:id/courses
+ * @access Public
+ * @Params: id (path) - Lecturer CUID/UUID, page (query, default: 1), limit (query, default: 10)
+ * @Body: N/A
  */
 lecturerRoutes.get(
     '/:id/courses',
@@ -96,8 +118,10 @@ lecturerRoutes.get(
 );
 
 /**
- * GET /api/v1/lecturers/:id/stats
- * Get lecturer statistics (public)
+ * @route GET /api/v1/lecturers/:id/stats
+ * @access Private - [admin, lecturer]
+ * @Params: id (path) - Lecturer CUID/UUID
+ * @Body: N/A
  */
 lecturerRoutes.get(
     '/:id/stats',
@@ -106,3 +130,5 @@ lecturerRoutes.get(
 );
 
 module.exports = lecturerRoutes;
+
+
