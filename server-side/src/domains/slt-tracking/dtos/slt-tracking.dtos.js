@@ -56,8 +56,8 @@ const ActivityTrackingFilterDTO = z.object({
   minTimeSpent: z.number().int().nonnegative().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(10),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
 });
 
 const BulkActivityTrackingDTO = z.object({
@@ -99,8 +99,8 @@ const StudentSltSummaryFilterDTO = z.object({
   minCertificatesEarned: z.number().int().nonnegative().optional(),
   minHoursLearned: z.number().int().nonnegative().optional(),
   minAverageScore: z.number().min(0).max(100).optional(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(10),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
 });
 
 const UpdateSltSummaryDTO = z.object({

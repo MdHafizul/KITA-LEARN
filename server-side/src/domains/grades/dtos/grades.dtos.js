@@ -116,8 +116,8 @@ const GradeFilterDTO = z.object({
     gradeValue: z.enum(['A', 'B', 'C', 'D', 'F']).optional(),
     minPercentage: z.number().min(0).max(100).optional(),
     maxPercentage: z.number().min(0).max(100).optional(),
-    page: z.number().int().min(1).optional(),
-    limit: z.number().int().min(1).max(100).optional()
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional()
 });
 
 // ============================================

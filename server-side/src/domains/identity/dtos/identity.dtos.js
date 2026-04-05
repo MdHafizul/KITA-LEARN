@@ -123,8 +123,8 @@ const UserFilterDTO = z.object({
   search: z.string().optional(), // Search by name or email
   isActive: z.boolean().optional(),
   isEmailVerified: z.boolean().optional(),
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(100).default(10),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
   sortBy: z.enum(['createdAt', 'fullName', 'email']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });

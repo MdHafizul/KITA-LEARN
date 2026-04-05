@@ -71,8 +71,8 @@ const ClassFilterDTO = z.object({
   name: z.string().optional(),
   location: z.string().optional(),
   status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(100).default(10),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
   sortBy: z.enum(['createdAt', 'name', 'enrollmentCount']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -146,7 +146,6 @@ const BulkClassEnrollmentDTO = z.object({
  * Validates data for creating a new class session
  */
 const ClassSessionCreateDTO = z.object({
-  classId: z.string().cuid('Invalid class ID format'),
   sessionDate: z.string().datetime('Invalid date format'),
   startTime: z.string().datetime('Invalid start time format'),
   endTime: z.string().datetime('Invalid end time format'),
@@ -195,8 +194,8 @@ const ClassSessionFilterDTO = z.object({
   classId: z.string().cuid().optional(),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(100).default(10),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
   sortBy: z.enum(['sessionDate', 'createdAt']).default('sessionDate'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });

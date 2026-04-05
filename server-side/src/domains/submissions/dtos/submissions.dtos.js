@@ -104,8 +104,8 @@ const SubmissionFilterDTO = z.object({
     userId: z.union([z.string().cuid(), z.string().uuid()]).optional(),
     status: z.enum(['DRAFT', 'SUBMITTED', 'GRADED', 'RETURNED']).optional(),
     isLate: z.boolean().optional(),
-    page: z.number().int().min(1).default(1),
-    limit: z.number().int().min(1).max(100).default(10)
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10)
 });
 
 module.exports = {

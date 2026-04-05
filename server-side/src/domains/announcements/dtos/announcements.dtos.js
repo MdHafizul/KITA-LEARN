@@ -78,8 +78,8 @@ const AnnouncementFilterDTO = z.object({
     courseId: z.union([z.string().cuid(), z.string().uuid()]).optional(),
     priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
     isExpired: z.boolean().optional(),
-    page: z.number().int().min(1).optional(),
-    limit: z.number().int().min(1).max(100).optional()
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional()
 });
 
 // ============================================

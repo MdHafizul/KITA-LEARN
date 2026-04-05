@@ -13,6 +13,8 @@
 
 const { statusCodes } = require('../../../config/constants');
 const announcementsService = require('../services/announcements.service');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const {
     AnnouncementCreateDTO,
     AnnouncementUpdateDTO,

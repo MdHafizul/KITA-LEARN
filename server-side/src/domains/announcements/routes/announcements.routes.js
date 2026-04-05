@@ -208,8 +208,9 @@ announcementsRoutes.get(
 // ============================================
 
 /**
- * POST /api/v1/courses/:courseId/announcements
+ * POST /api/v1/announcements
  * Create announcement for course (lecturer only)
+ * Body: { courseId, title, message, priority, announcementType }
  */
 /**
  * Desc: Route endpoint mapping to controller with middleware execution chain.
@@ -218,11 +219,10 @@ announcementsRoutes.get(
  * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 announcementsRoutes.post(
-    '/courses/:courseId/announcements',
+    '/',
     authMiddleware,
     adminBypass,
     authorizeLecturer,
-    validateParams(CourseIdDTO),
     validateBody(AnnouncementCreateDTO),
     announcementsController.createAnnouncement
 );
@@ -238,7 +238,7 @@ announcementsRoutes.post(
  * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
 announcementsRoutes.get(
-    '/courses/:courseId/announcements',
+    '/courses/:courseId',
     authMiddleware,
     validateParams(CourseIdDTO),
     announcementsController.getAnnouncementsByCourse

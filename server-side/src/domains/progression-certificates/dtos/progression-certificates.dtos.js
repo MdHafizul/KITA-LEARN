@@ -46,8 +46,8 @@ const StudentProgressionFilterDTO = z.object({
   minPoints: z.number().int().nonnegative().optional(),
   maxPoints: z.number().int().nonnegative().optional(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']).optional(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(10),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
 });
 
 const AwardPointsDTO = z.object({

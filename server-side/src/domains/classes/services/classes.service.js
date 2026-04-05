@@ -290,14 +290,14 @@ class ClassesService {
    * Body: N/A at service layer; consume already validated payload objects.
    * Auth Headers: N/A at service layer; authorization is handled before service invocation.
    */
-  async getEnrollmentsByClass(classId, userId, page, limit) {
+  async getEnrollmentsByClass(classId, userId, page, limit, isAdmin = false) {
     const cls = await classesRepository.findClassById(classId);
     if (!cls) {
       throw new Error('Class not found');
     }
 
-    // Authorization
-    if (cls.course.lecturerId !== userId) {
+    // Authorization: Allow lecturer or admin
+    if (cls.course.lecturerId !== userId && !isAdmin) {
       throw new Error('Only the course lecturer can view enrollments');
     }
 

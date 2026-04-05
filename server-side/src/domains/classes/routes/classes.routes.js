@@ -16,6 +16,8 @@ const express = require('express');
 const router = express.Router();
 const classesController = require('../controllers/classes.controller');
 const { authMiddleware, adminBypass, authorizeLecturer, authorizeStudent } = require('../../../middleware/auth.middleware');
+const { validateBody } = require('../../../middleware/validation.middleware');
+const { ClassCreateDTO, ClassUpdateDTO, ClassSessionCreateDTO } = require('../dtos/classes.dtos');
 
 // All routes require authentication
 router.use(authMiddleware, adminBypass);
@@ -23,6 +25,23 @@ router.use(authMiddleware, adminBypass);
 // ============================================
 // CLASS ENDPOINTS (6 routes)
 // ============================================
+
+/**
+ * POST /api/v1/classes
+ * Create a new class (Lecturer-only)
+ */
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
+router.post(
+    '/',
+    authorizeLecturer,
+    validateBody(ClassCreateDTO),
+    classesController.createClass
+);
 
 /**
  * GET /api/v1/classes/:classId
@@ -40,7 +59,18 @@ router.get('/:classId', classesController.getClass);
  * PUT /api/v1/classes/:classId
  * Update a class (Lecturer-only)
  */
-router.put('/:classId', classesController.updateClass);
+/**
+ * Desc: Route endpoint mapping to controller with middleware execution chain.
+ * Params: Validate all path/query params using DTO/Zod schema or validateParams middleware.
+ * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
+ * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
+ */
+router.put(
+    '/:classId',
+    authorizeLecturer,
+    validateBody(ClassUpdateDTO),
+    classesController.updateClass
+);
 
 /**
  * DELETE /api/v1/classes/:classId
@@ -52,7 +82,11 @@ router.put('/:classId', classesController.updateClass);
  * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
  * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
-router.delete('/:classId', authMiddleware, adminBypass, authorizeLecturer, classesController.deleteClass);
+router.delete(
+    '/:classId',
+    authorizeLecturer,
+    classesController.deleteClass
+);
 
 /**
  * GET /api/v1/classes/:classId/details
@@ -178,7 +212,12 @@ router.delete('/enrollments/:enrollmentId', authMiddleware, adminBypass, authori
  * Body: Validate request payload for POST/PUT/PATCH using validateBody and DTO schema.
  * Auth Headers: Declare endpoint as Public or require Authorization: Bearer <token> with role middleware.
  */
-router.post('/:classId/sessions', classesController.createSession);
+router.post(
+    '/:classId/sessions',
+    authorizeLecturer,
+    validateBody(ClassSessionCreateDTO),
+    classesController.createSession
+);
 
 /**
  * GET /api/v1/classes/:classId/sessions

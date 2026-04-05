@@ -78,8 +78,8 @@ const EnrollmentFilterDTO = z.object({
     courseId: z.union([z.string().cuid(), z.string().uuid()]).optional(),
     userId: z.union([z.string().cuid(), z.string().uuid()]).optional(),
     status: z.enum(['ACTIVE', 'SUSPENDED', 'COMPLETED', 'DROPPED']).optional(),
-    page: z.number().int().min(1).default(1),
-    limit: z.number().int().min(1).max(100).default(10)
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10)
 });
 
 module.exports = {

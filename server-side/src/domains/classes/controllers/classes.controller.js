@@ -12,6 +12,8 @@
  * Handles validation, status codes, error propagation
  */
 
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const classesService = require('../services/classes.service');
 const {
   ClassCreateDTO,
@@ -104,10 +106,10 @@ class ClassesController {
    */
   async createClass(req, res, next) {
     try {
-      const { courseId } = req.params;
       const userId = req.user.id;
       const isAdmin = req.isAdmin || false;
       const data = ClassCreateDTO.parse(req.body);
+      const { courseId } = data; // Extract courseId from validated request body
 
       if (!userId) {
         return res.status(401).json({
@@ -348,10 +350,11 @@ class ClassesController {
     try {
       const { classId } = req.params;
       const userId = req.user.id;
+      const isAdmin = req.isAdmin || false;
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
 
-      const result = await classesService.getEnrollmentsByClass(classId, userId, page, limit);
+      const result = await classesService.getEnrollmentsByClass(classId, userId, page, limit, isAdmin);
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       next(error);

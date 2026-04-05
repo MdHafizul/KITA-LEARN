@@ -16,7 +16,9 @@ const {
   gradingRoutes,
   certificateRoutes,
   enrollmentRoutes,
-  auditRoutes
+  auditRoutes,
+  announcementRoutes,
+  classRoutes
 } = require('./routes');
 const logger = require('./utils/logger');
 const { db } = require('./config/database');
@@ -258,6 +260,12 @@ apiV1.use('/enrollments', enrollmentRoutes);
 
 // Audit & Logging Routes (Admin only)
 apiV1.use('/audit', auditRoutes);
+
+//announcement routes
+apiV1.use('/announcements', announcementRoutes);
+
+// Class Management Routes
+apiV1.use('/classes', classRoutes);
 
 // Mount all v1 routes under /api/v1
 app.use('/api/v1', apiV1);
